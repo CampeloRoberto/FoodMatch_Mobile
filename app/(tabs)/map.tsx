@@ -1,112 +1,116 @@
-import { View, Text, ScrollView, Pressable } from "react-native";
+import { View, Text, FlatList, TouchableOpacity, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { MapPin, Navigation } from "lucide-react-native";
 import { nearbyRestaurants } from "@/data/restaurants";
+import { useColors } from "@/hooks/useColors";
+
+type NearbyRestaurant = (typeof nearbyRestaurants)[number];
 
 export default function MapScreen() {
+  const colors = useColors();
+  const styles = makeStyles(colors);
+
   return (
-    <SafeAreaView className="flex-1 bg-white dark:bg-gray-900" edges={["top"]}>
-      <ScrollView
-        className="flex-1"
-        contentContainerStyle={{ paddingBottom: 20 }}
+    <SafeAreaView style={styles.container} edges={["top"]}>
+      <FlatList
+        data={nearbyRestaurants}
+        keyExtractor={(item) => item.id.toString()}
         showsVerticalScrollIndicator={false}
-      >
-        {/* Header */}
-        <LinearGradient
-          colors={["#ff4757", "#ff5252"]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 32, borderBottomLeftRadius: 24, borderBottomRightRadius: 24 }}
-        >
-          <View className="flex-row items-center justify-between">
-            <View className="flex-row items-center gap-3">
-              <View className="w-12 h-12 bg-white/20 rounded-full items-center justify-center">
-                <MapPin size={24} color="white" />
-              </View>
-              <View>
-                <Text className="text-white text-3xl font-bold">Mapa</Text>
-                <Text className="text-white/80 text-sm">
-                  Restaurantes próximos
-                </Text>
-              </View>
-            </View>
-            <Pressable className="w-12 h-12 bg-white/20 rounded-full items-center justify-center">
-              <Navigation size={24} color="white" />
-            </Pressable>
-          </View>
-        </LinearGradient>
-
-        <View className="px-6 py-6 gap-6">
-          {/* Map Placeholder */}
-          <View className="bg-white dark:bg-gray-800 rounded-3xl overflow-hidden shadow-lg">
+        contentContainerStyle={styles.listContent}
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
+        ListHeaderComponent={
+          <>
             <LinearGradient
-              colors={["#ffe8e8", "#ffd0d0", "#ffe8e8"]}
-              style={{ height: 300, alignItems: "center", justifyContent: "center" }}
+              colors={["#ff4757", "#ff5252"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.header}
             >
-              <MapPin size={64} color="#ff4757" />
-              <Text className="text-xl font-semibold text-primary mt-4 mb-2">
-                Mapa Interativo
-              </Text>
-              <Text className="text-muted-foreground text-center px-8">
-                Integração com mapa em breve! Veja a lista de restaurantes
-                próximos abaixo.
-              </Text>
-            </LinearGradient>
-          </View>
-
-          {/* Nearby List */}
-          <View className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-6">
-            <View className="flex-row items-center gap-2 mb-4">
-              <Navigation size={20} color="#ff4757" />
-              <Text className="text-xl font-semibold text-foreground dark:text-white">
-                Restaurantes Próximos
-              </Text>
-            </View>
-            <View className="gap-3">
-              {nearbyRestaurants.map((restaurant, index) => (
-                <View
-                  key={restaurant.id}
-                  className="flex-row items-center justify-between p-4 bg-secondary/50 rounded-xl"
-                >
-                  <View className="flex-row items-center gap-4">
-                    <LinearGradient
-                      colors={["#ff4757", "#ff5252"]}
-                      style={{
-                        width: 40,
-                        height: 40,
-                        borderRadius: 20,
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <Text className="text-white font-semibold">
-                        {index + 1}
-                      </Text>
-                    </LinearGradient>
-                    <View>
-                      <Text className="font-semibold text-foreground dark:text-white mb-1">
-                        {restaurant.name}
-                      </Text>
-                      <View className="flex-row items-center gap-1">
-                        <MapPin size={12} color="#9ca3af" />
-                        <Text className="text-sm text-muted-foreground">
-                          {restaurant.distance} de você
-                        </Text>
-                      </View>
-                    </View>
+              <View style={styles.headerRow}>
+                <View style={styles.headerLeft}>
+                  <View style={styles.iconCircle}>
+                    <MapPin size={24} color="white" />
                   </View>
-                  <Pressable className="bg-primary px-4 py-2 rounded-full">
-                    <Text className="text-white text-sm font-medium">
-                      Ver Rota
-                    </Text>
-                  </Pressable>
+                  <View>
+                    <Text style={styles.headerTitle}>Mapa</Text>
+                    <Text style={styles.headerSubtitle}>Restaurantes próximos</Text>
+                  </View>
                 </View>
-              ))}
+                <TouchableOpacity style={styles.iconCircle}>
+                  <Navigation size={24} color="white" />
+                </TouchableOpacity>
+              </View>
+            </LinearGradient>
+
+            <View style={styles.mapPlaceholderCard}>
+              <LinearGradient
+                colors={["#ffe8e8", "#ffd0d0", "#ffe8e8"]}
+                style={styles.mapPlaceholder}
+              >
+                <MapPin size={64} color="#ff4757" />
+                <Text style={styles.mapTitle}>Mapa Interativo</Text>
+                <Text style={styles.mapSubtitle}>
+                  Integração com mapa em breve! Veja a lista de restaurantes próximos abaixo.
+                </Text>
+              </LinearGradient>
             </View>
+
+            <View style={styles.listHeader}>
+              <Navigation size={20} color="#ff4757" />
+              <Text style={styles.listHeaderTitle}>Restaurantes Próximos</Text>
+            </View>
+          </>
+        }
+        renderItem={({ item, index }: { item: NearbyRestaurant; index: number }) => (
+          <View style={styles.restaurantRow}>
+            <View style={styles.restaurantLeft}>
+              <LinearGradient colors={["#ff4757", "#ff5252"]} style={styles.indexBadge}>
+                <Text style={styles.indexText}>{index + 1}</Text>
+              </LinearGradient>
+              <View>
+                <Text style={styles.restaurantName}>{item.name}</Text>
+                <View style={styles.distanceRow}>
+                  <MapPin size={12} color="#9ca3af" />
+                  <Text style={styles.distanceText}>{item.distance} de você</Text>
+                </View>
+              </View>
+            </View>
+            <TouchableOpacity style={styles.routeBtn}>
+              <Text style={styles.routeBtnText}>Ver Rota</Text>
+            </TouchableOpacity>
           </View>
-        </View>
-      </ScrollView>
+        )}
+      />
     </SafeAreaView>
   );
+}
+
+function makeStyles(colors: ReturnType<typeof import("@/hooks/useColors").useColors>) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.bg },
+    listContent: { paddingBottom: 24 },
+    header: { paddingHorizontal: 24, paddingTop: 24, paddingBottom: 32, borderBottomLeftRadius: 24, borderBottomRightRadius: 24 },
+    headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+    headerLeft: { flexDirection: "row", alignItems: "center", gap: 12 },
+    iconCircle: { width: 48, height: 48, backgroundColor: "rgba(255,255,255,0.2)", borderRadius: 24, alignItems: "center", justifyContent: "center" },
+    headerTitle: { color: "#ffffff", fontSize: 28, fontWeight: "700" },
+    headerSubtitle: { color: "rgba(255,255,255,0.8)", fontSize: 13 },
+    mapPlaceholderCard: { marginHorizontal: 24, marginTop: 24, borderRadius: 24, overflow: "hidden", elevation: 4 },
+    mapPlaceholder: { height: 300, alignItems: "center", justifyContent: "center", paddingHorizontal: 32 },
+    mapTitle: { fontSize: 18, fontWeight: "600", color: "#ff4757", marginTop: 16, marginBottom: 8 },
+    mapSubtitle: { color: "#6b7280", textAlign: "center", fontSize: 13, lineHeight: 20 },
+    listHeader: { flexDirection: "row", alignItems: "center", gap: 8, marginHorizontal: 24, marginTop: 24, marginBottom: 16 },
+    listHeaderTitle: { fontSize: 18, fontWeight: "600", color: colors.text },
+    restaurantRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 24, paddingVertical: 12, backgroundColor: colors.surface, marginHorizontal: 24, borderRadius: 12 },
+    restaurantLeft: { flexDirection: "row", alignItems: "center", gap: 16 },
+    indexBadge: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
+    indexText: { color: "#ffffff", fontWeight: "600", fontSize: 14 },
+    restaurantName: { fontWeight: "600", color: colors.text, fontSize: 14, marginBottom: 4 },
+    distanceRow: { flexDirection: "row", alignItems: "center", gap: 4 },
+    distanceText: { fontSize: 12, color: colors.textMuted },
+    routeBtn: { backgroundColor: "#ff4757", paddingHorizontal: 16, paddingVertical: 8, borderRadius: 999 },
+    routeBtnText: { color: "#ffffff", fontSize: 13, fontWeight: "500" },
+    separator: { height: 8 },
+  });
 }
