@@ -1,50 +1,162 @@
-# Welcome to your Expo app 👋
+<div align="center">
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+# 🍔 FoodMatch
 
-## Get started
+**Seu app de delivery favorito, feito com React Native + Expo**
 
-1. Install dependencies
+![React Native](https://img.shields.io/badge/React_Native-0.81-61DAFB?style=for-the-badge&logo=react&logoColor=white)
+![Expo](https://img.shields.io/badge/Expo-54-000020?style=for-the-badge&logo=expo&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+![NativeWind](https://img.shields.io/badge/NativeWind-4.1-38BDF8?style=for-the-badge&logo=tailwindcss&logoColor=white)
 
-   ```bash
-   npm install
-   ```
+</div>
 
-2. Start the app
+---
 
-   ```bash
-   npx expo start
-   ```
+## ✨ Funcionalidades
 
-In the output, you'll find options to open the app in a
+- **Navegação em abas** — Home, Favoritos, Pedidos, Mapa e Perfil
+- **Busca e filtro** — pesquise restaurantes por nome ou tipo de culinária
+- **Favoritos persistentes** — salvos no dispositivo via AsyncStorage
+- **Carrinho inteligente** — proteção contra itens de múltiplos restaurantes
+- **Histórico de pedidos** — com status (Entregue, Em andamento, Cancelado)
+- **Checkout completo** — seleção de endereço e método de pagamento (Cartão, Pix, Dinheiro)
+- **Preferências do usuário** — culinárias e restrições alimentares personalizáveis
+- **Modo escuro / claro** — alternável pelo perfil, com suporte automático ao sistema
+- **Animações fluidas** — via Reanimated 4 e feedback tátil via Haptics
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+---
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## 📱 Telas
 
-## Get a fresh project
+| Tela | Descrição |
+|------|-----------|
+| **Home** | Listagem de restaurantes com busca, filtros por categoria e seções Destaques/Populares |
+| **Restaurante** | Cardápio por categorias, avaliações e adição de itens ao carrinho |
+| **Carrinho** | Visualização e edição de itens, cálculo de subtotal + taxa de entrega |
+| **Checkout** | Endereço de entrega, método de pagamento e confirmação do pedido |
+| **Favoritos** | Restaurantes salvos com opção de remover |
+| **Pedidos** | Histórico completo com badges de status |
+| **Mapa** | Lista de restaurantes próximos com distância |
+| **Perfil** | Dados do usuário, preferências, restrições alimentares e configurações |
 
-When you're ready, run:
+---
 
-```bash
-npm run reset-project
+## 🛠 Stack
+
+### Core
+- [React](https://react.dev/) 19 + [React Native](https://reactnative.dev/) 0.81
+- [Expo](https://expo.dev/) 54 + [Expo Router](https://expo.github.io/router/) 6 (file-based routing)
+- [TypeScript](https://www.typescriptlang.org/) 5.9
+
+### UI & Estilo
+- [NativeWind](https://www.nativewind.dev/) 4 (Tailwind CSS para React Native)
+- [Expo Linear Gradient](https://docs.expo.dev/versions/latest/sdk/linear-gradient/)
+- [Lucide React Native](https://lucide.dev/) (ícones)
+- [@expo/vector-icons](https://icons.expo.fyi/)
+
+### Animação & Gestos
+- [React Native Reanimated](https://docs.swmansion.com/react-native-reanimated/) 4
+- [React Native Gesture Handler](https://docs.swmansion.com/react-native-gesture-handler/) 2
+- [Expo Haptics](https://docs.expo.dev/versions/latest/sdk/haptics/)
+
+### Estado & Persistência
+- React Context API
+- [@react-native-async-storage/async-storage](https://react-native-async-storage.github.io/async-storage/)
+
+---
+
+## 🗂 Estrutura do Projeto
+
+```
+FoodMatch_mobile/
+├── app/                        # Rotas (Expo Router)
+│   ├── (tabs)/                 # Grupo de abas
+│   │   ├── index.tsx           # Home
+│   │   ├── favorites.tsx       # Favoritos
+│   │   ├── orders.tsx          # Pedidos
+│   │   ├── map.tsx             # Mapa
+│   │   └── profile.tsx         # Perfil
+│   ├── restaurant/[id].tsx     # Detalhes do restaurante (rota dinâmica)
+│   ├── cart.tsx                # Carrinho
+│   ├── checkout.tsx            # Checkout
+│   └── order-confirmation.tsx  # Confirmação de pedido
+│
+├── components/                 # Componentes reutilizáveis
+│   ├── RestaurantCard.tsx      # Card de restaurante (featured e compact)
+│   ├── CategoryPill.tsx        # Pílulas de filtro de categoria
+│   ├── themed-text.tsx         # Texto com suporte a tema
+│   └── themed-view.tsx         # View com suporte a tema
+│
+├── context/                    # Estado global (React Context)
+│   ├── CartContext.tsx
+│   ├── FavoritesContext.tsx
+│   ├── OrdersContext.tsx
+│   ├── ThemeContext.tsx
+│   └── UserPreferencesContext.tsx
+│
+├── data/                       # Dados mock
+│   ├── restaurants.ts
+│   ├── menus.ts
+│   ├── orders.ts
+│   └── reviews.ts
+│
+├── types/                      # Tipagens TypeScript
+├── hooks/                      # Custom hooks
+├── constants/                  # Constantes da aplicação
+└── assets/                     # Imagens e ícones
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+---
 
-## Learn more
+## 🚀 Como rodar
 
-To learn more about developing your project with Expo, look at the following resources:
+### Pré-requisitos
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+- [Node.js](https://nodejs.org/) 18+
+- [Expo CLI](https://docs.expo.dev/get-started/installation/)
+- Emulador Android/iOS **ou** o app [Expo Go](https://expo.dev/go) no celular
 
-## Join the community
+### Instalação
 
-Join our community of developers creating universal apps.
+```bash
+# Clone o repositório
+git clone https://github.com/seu-usuario/FoodMatch_mobile.git
+cd FoodMatch_mobile
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+# Instale as dependências
+npm install
+
+# Inicie o servidor de desenvolvimento (--clear limpa o cache do Metro)
+npx expo start --clear
+```
+
+### Rodando em cada plataforma
+
+```bash
+npx expo start --android   # Android
+npx expo start --ios       # iOS (requer macOS)
+npx expo start --web       # Web (modo preview)
+```
+
+---
+
+## ⚙️ Configuração
+
+O projeto usa **NativeWind v4** com o Metro configurado via [metro.config.js](metro.config.js) e Babel via [babel.config.js](babel.config.js). As classes Tailwind são processadas automaticamente a partir de [global.css](global.css).
+
+Cores personalizadas definidas em [tailwind.config.js](tailwind.config.js):
+
+| Token | Valor |
+|-------|-------|
+| `primary` | `#ff4757` |
+| `primary-dark` | `#ff5252` |
+| `secondary` | `#ffe8e8` |
+| `accent` | `#ffd0d0` |
+| `foreground` | `#1a1a1a` |
+
+---
+
+## 📄 Licença
+
+Este projeto é privado. Todos os direitos reservados.
