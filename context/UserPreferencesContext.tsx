@@ -13,8 +13,8 @@ const UserPreferencesContext = createContext<UserPreferencesContextType | undefi
 const STORAGE_KEY = "@foodmatch:preferences";
 
 export function UserPreferencesProvider({ children }: { children: ReactNode }) {
-  const [selectedTypes, setSelectedTypes] = useState<string[]>(["Italiana", "Japonesa"]);
-  const [selectedRestrictions, setSelectedRestrictions] = useState<string[]>(["Vegetariano"]);
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
+  const [selectedRestrictions, setSelectedRestrictions] = useState<string[]>([]);
 
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEY).then((stored) => {

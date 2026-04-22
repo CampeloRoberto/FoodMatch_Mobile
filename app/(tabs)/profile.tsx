@@ -1,44 +1,32 @@
-import { useState } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  Switch,
-  StyleSheet,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import Animated, { FadeInDown } from "react-native-reanimated";
-import { LinearGradient } from "expo-linear-gradient";
-import {
-  User,
-  Mail,
-  Phone,
-  MapPin,
-  CreditCard,
-  Bell,
-  Shield,
-  Globe,
-  Moon,
-  ChevronRight,
-  Check,
-  ArrowLeft,
-} from "lucide-react-native";
-import { useRouter } from "expo-router";
-import { useUserPreferences } from "@/context/UserPreferencesContext";
 import { useTheme } from "@/context/ThemeContext";
 import { useColors } from "@/hooks/useColors";
-
-const restaurantTypes = [
-  "Brasileira", "Italiana", "Japonesa", "Mexicana",
-  "Chinesa", "Árabe", "Fast Food", "Vegana",
-  "Vegetariana", "Frutos do Mar",
-];
-
-const dietaryRestrictions = [
-  "Sem Glúten", "Sem Lactose", "Vegano", "Vegetariano",
-  "Kosher", "Halal", "Sem Nozes", "Sem Frutos do Mar",
-];
+import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
+import {
+  ArrowLeft,
+  Bell,
+  ChevronRight,
+  CreditCard,
+  Globe,
+  Mail,
+  MapPin,
+  Moon,
+  Phone,
+  Shield,
+  SlidersHorizontal,
+  User,
+} from "lucide-react-native";
+import { useState } from "react";
+import {
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import Animated, { FadeInDown } from "react-native-reanimated";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const profileFields = [
   { icon: <Mail size={20} color="#ff4757" />, label: "Email", value: "roberto@email.com" },
@@ -48,7 +36,6 @@ const profileFields = [
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { selectedTypes, selectedRestrictions, toggleType, toggleRestriction } = useUserPreferences();
   const [notifications, setNotifications] = useState(true);
   const { theme, toggleTheme } = useTheme();
   const colors = useColors();
@@ -116,50 +103,22 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </Animated.View>
 
-        {/* Cuisine Preferences */}
+        {/* Filters shortcut */}
         <Animated.View entering={FadeInDown.delay(200).duration(400)} style={styles.card}>
-          <Text style={styles.cardTitle}>Tipos de Culinária Favoritos</Text>
-          <Text style={styles.cardSubtitle}>Selecione seus tipos de restaurante preferidos</Text>
-          <View style={styles.pillsWrap}>
-            {restaurantTypes.map((type) => {
-              const active = selectedTypes.includes(type);
-              return (
-                <TouchableOpacity
-                  key={type}
-                  onPress={() => toggleType(type)}
-                  style={[styles.pill, active ? styles.pillActive : styles.pillInactive]}
-                >
-                  {active && <Check size={14} color="white" />}
-                  <Text style={[styles.pillText, active && styles.pillTextActive]}>{type}</Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </Animated.View>
-
-        {/* Dietary Restrictions */}
-        <Animated.View entering={FadeInDown.delay(300).duration(400)} style={styles.card}>
-          <Text style={styles.cardTitle}>Restrições Alimentares</Text>
-          <Text style={styles.cardSubtitle}>Informe suas restrições para filtrar pratos adequados</Text>
-          <View style={styles.pillsWrap}>
-            {dietaryRestrictions.map((restriction) => {
-              const active = selectedRestrictions.includes(restriction);
-              return (
-                <TouchableOpacity
-                  key={restriction}
-                  onPress={() => toggleRestriction(restriction)}
-                  style={[styles.pill, active ? styles.pillActive : styles.pillInactive]}
-                >
-                  {active && <Check size={14} color="white" />}
-                  <Text style={[styles.pillText, active && styles.pillTextActive]}>{restriction}</Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+          <TouchableOpacity style={styles.filterRow} onPress={() => router.back()}>
+            <View style={styles.filterLeft}>
+              <SlidersHorizontal size={20} color="#ff4757" />
+              <View>
+                <Text style={styles.settingLabel}>Preferências e Filtros</Text>
+                <Text style={styles.settingDesc}>Culinárias favoritas e restrições alimentares</Text>
+              </View>
+            </View>
+            <ChevronRight size={20} color={colors.textLight} />
+          </TouchableOpacity>
         </Animated.View>
 
         {/* Settings */}
-        <Animated.View entering={FadeInDown.delay(400).duration(400)} style={styles.card}>
+        <Animated.View entering={FadeInDown.delay(300).duration(400)} style={styles.card}>
           <Text style={styles.cardTitleStandalone}>Configurações</Text>
 
           <View style={styles.settingRow}>
@@ -208,7 +167,7 @@ export default function ProfileScreen() {
         </Animated.View>
 
         {/* Logout */}
-        <Animated.View entering={FadeInDown.delay(500).duration(400)}>
+        <Animated.View entering={FadeInDown.delay(400).duration(400)}>
           <TouchableOpacity style={styles.logoutBtn}>
             <Text style={styles.logoutText}>Sair da Conta</Text>
           </TouchableOpacity>
@@ -239,7 +198,6 @@ function makeStyles(colors: ReturnType<typeof import("@/hooks/useColors").useCol
     cardTitleRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 16 },
     cardTitle: { fontSize: 18, fontWeight: "600", color: colors.text, marginBottom: 4 },
     cardTitleStandalone: { fontSize: 18, fontWeight: "600", color: colors.text, marginBottom: 16 },
-    cardSubtitle: { fontSize: 13, color: colors.textMuted, marginBottom: 16 },
     creditCard: { borderRadius: 12, padding: 16, marginBottom: 12 },
     creditCardLabel: { color: "rgba(255,255,255,0.9)", fontSize: 13, marginBottom: 8 },
     creditCardNumber: { color: "#ffffff", fontSize: 18, letterSpacing: 4, marginBottom: 12 },
@@ -247,12 +205,8 @@ function makeStyles(colors: ReturnType<typeof import("@/hooks/useColors").useCol
     creditCardText: { color: "#ffffff", fontSize: 13 },
     addCardBtn: { width: "100%", padding: 16, borderWidth: 2, borderStyle: "dashed", borderColor: "rgba(255,71,87,0.3)", borderRadius: 12, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 },
     addCardBtnText: { color: "#ff4757", fontWeight: "500", fontSize: 14 },
-    pillsWrap: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-    pill: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 999 },
-    pillActive: { backgroundColor: "#ff4757" },
-    pillInactive: { backgroundColor: colors.bgSecondary },
-    pillText: { color: colors.text, fontSize: 14 },
-    pillTextActive: { color: "#ffffff" },
+    filterRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+    filterLeft: { flexDirection: "row", alignItems: "center", gap: 12, flex: 1 },
     settingRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 12, paddingHorizontal: 4 },
     settingLeft: { flexDirection: "row", alignItems: "center", gap: 12, flex: 1 },
     settingLabel: { color: colors.text, fontSize: 14, fontWeight: "500" },

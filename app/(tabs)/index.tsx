@@ -2,25 +2,33 @@ import { useState } from "react";
 import { View, Text, TextInput, FlatList, TouchableOpacity, Image, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
-import { useRouter } from "expo-router";
-import { Search, SlidersHorizontal, ChevronRight } from "lucide-react-native";
+import { Search, SlidersHorizontal } from "lucide-react-native";
 import { RestaurantCard } from "@/components/RestaurantCard";
 import { CategoryPill } from "@/components/CategoryPill";
+import { FilterModal } from "@/components/FilterModal";
 import { useUserPreferences } from "@/context/UserPreferencesContext";
 import { featuredRestaurant, popularRestaurants, allRestaurants, cuisineIcons } from "@/data/restaurants";
 import type { Restaurant } from "@/types";
 import { useColors } from "@/hooks/useColors";
 
+const allCombined = [...popularRestaurants, ...allRestaurants];
+
 export default function HomeScreen() {
-  const { selectedTypes } = useUserPreferences();
+  const { selectedTypes, selectedRestrictions } = useUserPreferences();
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const router = useRouter();
+  const [filterVisible, setFilterVisible] = useState(false);
   const colors = useColors();
   const styles = makeStyles(colors);
+  const filterBadge = selectedTypes.length + selectedRestrictions.length;
 
-  const getFiltered = (list: Restaurant[]) => {
+  const isFiltered = selectedTypes.length > 0 || !!searchQuery.trim() || !!activeCategory;
+
+  const applyFilters = (list: Restaurant[]) => {
     let result = list;
+    if (selectedTypes.length > 0) {
+      result = result.filter((r) => selectedTypes.includes(r.category));
+    }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       result = result.filter((r) => r.name.toLowerCase().includes(q) || r.category.toLowerCase().includes(q));
@@ -31,9 +39,8 @@ export default function HomeScreen() {
     return result;
   };
 
-  const filteredPopular = getFiltered(popularRestaurants);
-  const filteredAll = getFiltered(allRestaurants);
-  const noResults = (searchQuery || activeCategory) && filteredPopular.length === 0 && filteredAll.length === 0;
+  const filteredGrid = applyFilters(isFiltered ? allCombined : allRestaurants);
+  const noResults = isFiltered && filteredGrid.length === 0;
 
   const ListHeader = (
     <>
@@ -52,8 +59,13 @@ export default function HomeScreen() {
             onChangeText={setSearchQuery}
             style={styles.searchInput}
           />
-          <TouchableOpacity style={styles.searchIconRight}>
+          <TouchableOpacity style={styles.searchIconRight} onPress={() => setFilterVisible(true)}>
             <SlidersHorizontal size={20} color="#ff4757" />
+            {filterBadge > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{filterBadge}</Text>
+              </View>
+            )}
           </TouchableOpacity>
         </View>
       </LinearGradient>
@@ -74,11 +86,7 @@ export default function HomeScreen() {
               onPress={() => setActiveCategory(activeCategory === type ? null : type)}
             />
           )}
-          ListEmptyComponent={
-            <View style={styles.noPrefsBox}>
-              <Text style={styles.noPrefsText}>Nenhuma preferência selecionada. Configure no Perfil.</Text>
-            </View>
-          }
+          ListEmptyComponent={null}
         />
 
         {noResults ? (
@@ -88,43 +96,33 @@ export default function HomeScreen() {
           </View>
         ) : null}
 
-        {!searchQuery && !activeCategory && (
+        {!isFiltered && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Recomendado para Você</Text>
-              <TouchableOpacity onPress={() => router.push("/all-restaurants" as any)} style={styles.sectionAction}>
-                <Text style={styles.sectionActionText}>Ver Mais</Text>
-                <ChevronRight size={16} color="#ff4757" />
-              </TouchableOpacity>
             </View>
             <RestaurantCard restaurant={featuredRestaurant} featured />
           </View>
         )}
 
-        {filteredPopular.length > 0 && (
+        {!isFiltered && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>
-                {searchQuery || activeCategory ? "Resultados Populares" : "Restaurantes Populares"}
-              </Text>
-              <TouchableOpacity onPress={() => router.push("/all-restaurants" as any)} style={styles.sectionAction}>
-                <Text style={styles.sectionActionText}>Todos</Text>
-                <ChevronRight size={16} color="#ff4757" />
-              </TouchableOpacity>
+              <Text style={styles.sectionTitle}>Restaurantes Populares</Text>
             </View>
             <FlatList
               horizontal
               showsHorizontalScrollIndicator={false}
-              data={filteredPopular}
+              data={popularRestaurants}
               keyExtractor={(item) => item.id.toString()}
               renderItem={({ item }) => <RestaurantCard restaurant={item} />}
             />
           </View>
         )}
 
-        {filteredAll.length > 0 && (
+        {filteredGrid.length > 0 && (
           <Text style={styles.allTitle}>
-            {searchQuery || activeCategory ? "Mais Resultados" : "Todos os Restaurantes"}
+            {isFiltered ? "Resultados" : "Todos os Restaurantes"}
           </Text>
         )}
       </View>
@@ -133,13 +131,14 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
+      <FilterModal visible={filterVisible} onClose={() => setFilterVisible(false)} />
       <FlatList
-        data={filteredAll}
+        data={filteredGrid}
         keyExtractor={(item) => item.id.toString()}
         numColumns={2}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.listContent}
-        columnWrapperStyle={filteredAll.length > 0 ? styles.columnWrapper : undefined}
+        columnWrapperStyle={filteredGrid.length > 0 ? styles.columnWrapper : undefined}
         ListHeaderComponent={ListHeader}
         renderItem={({ item }) => <View style={styles.allCardWrapper}><RestaurantCard restaurant={item} featured /></View>}
       />
@@ -158,7 +157,9 @@ function makeStyles(colors: ReturnType<typeof import("@/hooks/useColors").useCol
     searchWrapper: { flexDirection: "row", alignItems: "center", backgroundColor: "#ffffff", borderRadius: 999, paddingHorizontal: 16, elevation: 4 },
     searchIconLeft: { marginRight: 8 },
     searchInput: { flex: 1, paddingVertical: 12, color: "#1f2937", fontSize: 15 },
-    searchIconRight: { marginLeft: 8 },
+    searchIconRight: { marginLeft: 8, position: "relative" },
+    badge: { position: "absolute", top: -6, right: -6, backgroundColor: "#ff4757", borderRadius: 8, minWidth: 16, height: 16, alignItems: "center", justifyContent: "center", paddingHorizontal: 3 },
+    badgeText: { color: "#ffffff", fontSize: 10, fontWeight: "700" },
     body: { paddingHorizontal: 24, paddingTop: 16 },
     pillsList: { marginBottom: 24, marginHorizontal: -8 },
     pillsContent: { paddingHorizontal: 8, paddingBottom: 8 },
