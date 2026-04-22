@@ -5,7 +5,7 @@ export const featuredRestaurant: Restaurant = {
   name: "Sabor & Brasa",
   rating: 4.5,
   distance: "500m",
-  category: "Churrascaria",
+  category: "Brasileira",
   priceRange: "$$",
   image:
     "https://images.unsplash.com/photo-1758157835975-1cb4947750df?w=800&q=80",

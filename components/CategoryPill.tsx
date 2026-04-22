@@ -1,4 +1,4 @@
-import { Pressable, Text, StyleSheet } from "react-native";
+import { TouchableOpacity, Text, StyleSheet } from "react-native";
 
 interface CategoryPillProps {
   icon: string;
@@ -9,7 +9,7 @@ interface CategoryPillProps {
 
 export function CategoryPill({ icon, label, isActive = false, onPress }: CategoryPillProps) {
   return (
-    <Pressable
+    <TouchableOpacity
       onPress={onPress}
       style={[styles.pill, isActive ? styles.pillActive : styles.pillInactive]}
     >
@@ -17,7 +17,7 @@ export function CategoryPill({ icon, label, isActive = false, onPress }: Categor
       <Text style={[styles.label, isActive ? styles.labelActive : styles.labelInactive]}>
         {label}
       </Text>
-    </Pressable>
+    </TouchableOpacity>
   );
 }
 
