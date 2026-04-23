@@ -174,6 +174,6 @@ Cores personalizadas definidas em [tailwind.config.js](tailwind.config.js):
 
 ---
 
-## 📄 Licença
+## 📄 Licença e Colaboradores
 
 Este projeto é privado. Todos os direitos reservados a Diego Furtado, Isadora Batista e Roberto Campelo.
