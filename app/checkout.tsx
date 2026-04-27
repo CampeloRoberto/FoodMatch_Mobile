@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { View, Text, ScrollView, Pressable, TextInput, Alert } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, TextInput, Alert, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { ArrowLeft, MapPin, CreditCard, Banknote, Smartphone } from "lucide-react-native";
 import { useCart } from "@/context/CartContext";
 import { useOrders } from "@/context/OrdersContext";
 import { findRestaurantById } from "@/data/restaurants";
+import { useColors } from "@/hooks/useColors";
 
 type PaymentMethod = "card" | "pix" | "cash";
 
@@ -22,6 +23,8 @@ export default function CheckoutScreen() {
   const [address, setAddress] = useState("Rua das Flores, 123 – Jardins");
   const [payment, setPayment] = useState<PaymentMethod>("card");
   const [loading, setLoading] = useState(false);
+  const colors = useColors();
+  const styles = makeStyles(colors);
 
   const restaurant = restaurantId ? findRestaurantById(restaurantId) : null;
   const deliveryFee = 6.99;
@@ -33,18 +36,9 @@ export default function CheckoutScreen() {
       return;
     }
     if (!restaurantId || !restaurant) return;
-
     setLoading(true);
-    // Simulate network delay
     setTimeout(() => {
-      const order = addOrder({
-        restaurantId,
-        restaurantName,
-        restaurantImage: restaurant.image,
-        items,
-        total: grandTotal,
-        address,
-      });
+      const order = addOrder({ restaurantId, restaurantName, restaurantImage: restaurant.image, items, total: grandTotal, address });
       clearCart();
       setLoading(false);
       router.replace(`/order-confirmation?orderId=${order.id}`);
@@ -52,125 +46,122 @@ export default function CheckoutScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white dark:bg-gray-900" edges={["top"]}>
-      {/* Header */}
-      <View className="flex-row items-center px-4 py-3 border-b border-gray-100 dark:border-gray-800">
-        <Pressable onPress={() => router.back()} className="w-10 h-10 rounded-full items-center justify-center mr-3">
-          <ArrowLeft size={22} color="#1f2937" />
-        </Pressable>
-        <Text className="text-xl font-bold text-foreground dark:text-white">Finalizar pedido</Text>
+    <SafeAreaView style={styles.container} edges={["top"]}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <ArrowLeft size={22} color={colors.text} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Finalizar pedido</Text>
       </View>
 
-      <ScrollView
-        className="flex-1 px-4 pt-4"
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 24 }}
-      >
-        {/* Restaurante */}
-        <View className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-4 mb-4">
-          <Text className="text-xs text-gray-500 mb-1 uppercase font-semibold tracking-wider">Restaurante</Text>
-          <Text className="font-bold text-foreground dark:text-white text-base">{restaurantName}</Text>
-          <Text className="text-gray-500 text-sm mt-0.5">
-            {items.length} {items.length === 1 ? "item" : "itens"}
-          </Text>
+      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        <View style={styles.card}>
+          <Text style={styles.cardLabel}>Restaurante</Text>
+          <Text style={styles.cardTitle}>{restaurantName}</Text>
+          <Text style={styles.cardSub}>{items.length} {items.length === 1 ? "item" : "itens"}</Text>
         </View>
 
-        {/* Endereço */}
-        <View className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-4 mb-4">
-          <View className="flex-row items-center gap-2 mb-3">
+        <View style={styles.card}>
+          <View style={styles.cardHeaderRow}>
             <MapPin size={18} color="#ff4747" />
-            <Text className="font-semibold text-foreground dark:text-white">Endereço de entrega</Text>
+            <Text style={styles.cardSectionTitle}>Endereço de entrega</Text>
           </View>
           <TextInput
             value={address}
             onChangeText={setAddress}
             placeholder="Rua, número, bairro..."
-            placeholderTextColor="#9ca3af"
-            className="bg-white dark:bg-gray-700 rounded-xl px-4 py-3 text-foreground dark:text-white text-sm border border-gray-200 dark:border-gray-600"
+            placeholderTextColor={colors.textLight}
+            style={styles.addressInput}
             multiline
           />
         </View>
 
-        {/* Pagamento */}
-        <View className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-4 mb-4">
-          <View className="flex-row items-center gap-2 mb-3">
+        <View style={styles.card}>
+          <View style={styles.cardHeaderRow}>
             <CreditCard size={18} color="#ff4747" />
-            <Text className="font-semibold text-foreground dark:text-white">Forma de pagamento</Text>
+            <Text style={styles.cardSectionTitle}>Forma de pagamento</Text>
           </View>
-          <View className="gap-2">
+          <View style={styles.paymentOptions}>
             {PAYMENT_OPTIONS.map((opt) => (
-              <Pressable
+              <TouchableOpacity
                 key={opt.key}
                 onPress={() => setPayment(opt.key)}
-                className="flex-row items-center gap-3 bg-white dark:bg-gray-700 rounded-xl px-4 py-3 border"
-                style={{ borderColor: payment === opt.key ? "#ff4747" : "#e5e7eb" }}
+                style={[styles.paymentOption, { borderColor: payment === opt.key ? "#ff4747" : colors.borderStrong }]}
               >
                 {opt.icon}
-                <Text className="text-foreground dark:text-white text-sm flex-1">{opt.label}</Text>
-                <View
-                  style={{
-                    width: 20,
-                    height: 20,
-                    borderRadius: 10,
-                    borderWidth: 2,
-                    borderColor: payment === opt.key ? "#ff4747" : "#d1d5db",
-                    backgroundColor: payment === opt.key ? "#ff4747" : "transparent",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  {payment === opt.key && (
-                    <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: "#fff" }} />
-                  )}
+                <Text style={styles.paymentLabel}>{opt.label}</Text>
+                <View style={[styles.radio, { borderColor: payment === opt.key ? "#ff4747" : "#d1d5db", backgroundColor: payment === opt.key ? "#ff4747" : "transparent" }]}>
+                  {payment === opt.key && <View style={styles.radioDot} />}
                 </View>
-              </Pressable>
+              </TouchableOpacity>
             ))}
           </View>
         </View>
 
-        {/* Resumo de valores */}
-        <View className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-4 gap-2">
-          <Text className="font-semibold text-foreground dark:text-white mb-1">Resumo do pedido</Text>
-          {items.map(({ menuItem, quantity }) => (
-            <View key={menuItem.id} className="flex-row justify-between">
-              <Text className="text-gray-500 text-sm flex-1 mr-2" numberOfLines={1}>
-                {quantity}x {menuItem.name}
-              </Text>
-              <Text className="text-gray-600 dark:text-gray-300 text-sm font-medium">
-                R$ {(menuItem.price * quantity).toFixed(2).replace(".", ",")}
-              </Text>
-            </View>
-          ))}
-          <View className="border-t border-gray-200 dark:border-gray-700 mt-1 pt-2 gap-1">
-            <View className="flex-row justify-between">
-              <Text className="text-gray-500 text-sm">Taxa de entrega</Text>
-              <Text className="text-gray-600 dark:text-gray-300 text-sm">
-                R$ {deliveryFee.toFixed(2).replace(".", ",")}
-              </Text>
-            </View>
-            <View className="flex-row justify-between mt-1">
-              <Text className="font-bold text-foreground dark:text-white">Total</Text>
-              <Text className="font-bold text-primary text-base">
-                R$ {grandTotal.toFixed(2).replace(".", ",")}
-              </Text>
-            </View>
+        <View style={styles.card}>
+          <Text style={styles.cardSectionTitle}>Resumo do pedido</Text>
+          <View style={styles.summaryItems}>
+            {items.map(({ menuItem, quantity }) => (
+              <View key={menuItem.id} style={styles.summaryRow}>
+                <Text style={styles.summaryItemName} numberOfLines={1}>{quantity}x {menuItem.name}</Text>
+                <Text style={styles.summaryItemPrice}>R$ {(menuItem.price * quantity).toFixed(2).replace(".", ",")}</Text>
+              </View>
+            ))}
+          </View>
+          <View style={styles.summaryDivider} />
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Taxa de entrega</Text>
+            <Text style={styles.summaryValue}>R$ {deliveryFee.toFixed(2).replace(".", ",")}</Text>
+          </View>
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryTotal}>Total</Text>
+            <Text style={styles.summaryTotalValue}>R$ {grandTotal.toFixed(2).replace(".", ",")}</Text>
           </View>
         </View>
       </ScrollView>
 
-      {/* Confirm button */}
-      <View className="px-4 pb-8 pt-3 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900">
-        <Pressable
-          onPress={handleConfirm}
-          disabled={loading}
-          className="bg-primary rounded-2xl py-4 items-center"
-          style={{ opacity: loading ? 0.7 : 1 }}
-        >
-          <Text className="text-white font-bold text-base tracking-wide">
+      <View style={styles.footer}>
+        <TouchableOpacity onPress={handleConfirm} disabled={loading} style={[styles.confirmBtn, { opacity: loading ? 0.7 : 1 }]}>
+          <Text style={styles.confirmBtnText}>
             {loading ? "Confirmando pedido..." : `Confirmar • R$ ${grandTotal.toFixed(2).replace(".", ",")}`}
           </Text>
-        </Pressable>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
+}
+
+function makeStyles(colors: ReturnType<typeof import("@/hooks/useColors").useColors>) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.bg },
+    header: { flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.border },
+    backBtn: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center", marginRight: 12 },
+    headerTitle: { fontSize: 20, fontWeight: "700", color: colors.text },
+    scroll: { flex: 1, paddingHorizontal: 16 },
+    scrollContent: { paddingTop: 16, paddingBottom: 24, gap: 16 },
+    card: { backgroundColor: colors.cardAlt, borderRadius: 16, padding: 16 },
+    cardLabel: { fontSize: 11, color: colors.textMuted, fontWeight: "600", textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 },
+    cardTitle: { fontWeight: "700", color: colors.text, fontSize: 15 },
+    cardSub: { color: colors.textMuted, fontSize: 13, marginTop: 2 },
+    cardHeaderRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 12 },
+    cardSectionTitle: { fontWeight: "600", color: colors.text, fontSize: 15 },
+    addressInput: { backgroundColor: colors.card, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 12, color: colors.text, fontSize: 13, borderWidth: 1, borderColor: colors.borderStrong },
+    paymentOptions: { gap: 8 },
+    paymentOption: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: colors.card, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 12, borderWidth: 1.5 },
+    paymentLabel: { color: colors.text, fontSize: 13, flex: 1 },
+    radio: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, alignItems: "center", justifyContent: "center" },
+    radioDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: "#ffffff" },
+    summaryItems: { gap: 8, marginBottom: 12 },
+    summaryRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+    summaryItemName: { color: colors.textMuted, fontSize: 13, flex: 1, marginRight: 8 },
+    summaryItemPrice: { color: colors.textMuted, fontSize: 13, fontWeight: "500" },
+    summaryDivider: { borderTopWidth: 1, borderTopColor: colors.borderStrong, marginVertical: 8 },
+    summaryLabel: { color: colors.textMuted, fontSize: 13 },
+    summaryValue: { color: colors.textMuted, fontSize: 13 },
+    summaryTotal: { fontWeight: "700", color: colors.text, fontSize: 15 },
+    summaryTotalValue: { fontWeight: "700", color: "#ff4757", fontSize: 16 },
+    footer: { paddingHorizontal: 16, paddingBottom: 32, paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.border, backgroundColor: colors.bg },
+    confirmBtn: { backgroundColor: "#ff4757", borderRadius: 16, paddingVertical: 16, alignItems: "center" },
+    confirmBtnText: { color: "#ffffff", fontWeight: "700", fontSize: 15, letterSpacing: 0.5 },
+  });
 }

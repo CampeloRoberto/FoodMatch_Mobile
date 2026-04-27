@@ -1,204 +1,181 @@
 import { useState } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  ScrollView,
-  Pressable,
-  Image,
-} from "react-native";
+import { View, Text, TextInput, FlatList, TouchableOpacity, Image, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
-import { useRouter } from "expo-router";
-import { Search, SlidersHorizontal, ChevronRight } from "lucide-react-native";
+import { Search, SlidersHorizontal } from "lucide-react-native";
 import { RestaurantCard } from "@/components/RestaurantCard";
 import { CategoryPill } from "@/components/CategoryPill";
+import { FilterModal } from "@/components/FilterModal";
 import { useUserPreferences } from "@/context/UserPreferencesContext";
-import {
-  featuredRestaurant,
-  popularRestaurants,
-  allRestaurants,
-  cuisineIcons,
-} from "@/data/restaurants";
+import { featuredRestaurant, popularRestaurants, allRestaurants, cuisineIcons } from "@/data/restaurants";
 import type { Restaurant } from "@/types";
+import { useColors } from "@/hooks/useColors";
+
+const allCombined = [...popularRestaurants, ...allRestaurants];
 
 export default function HomeScreen() {
-  const { selectedTypes } = useUserPreferences();
+  const { selectedTypes, selectedRestrictions } = useUserPreferences();
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const router = useRouter();
+  const [filterVisible, setFilterVisible] = useState(false);
+  const colors = useColors();
+  const styles = makeStyles(colors);
+  const filterBadge = selectedTypes.length + selectedRestrictions.length;
 
-  const getFiltered = (list: Restaurant[]) => {
+  const isFiltered = selectedTypes.length > 0 || !!searchQuery.trim() || !!activeCategory;
+
+  const applyFilters = (list: Restaurant[]) => {
     let result = list;
+    if (selectedTypes.length > 0) {
+      result = result.filter((r) => selectedTypes.includes(r.category));
+    }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
-      result = result.filter(
-        (r) =>
-          r.name.toLowerCase().includes(q) ||
-          r.category.toLowerCase().includes(q)
-      );
+      result = result.filter((r) => r.name.toLowerCase().includes(q) || r.category.toLowerCase().includes(q));
     }
     if (activeCategory) {
-      result = result.filter(
-        (r) => r.category.toLowerCase() === activeCategory.toLowerCase()
-      );
+      result = result.filter((r) => r.category.toLowerCase() === activeCategory.toLowerCase());
     }
     return result;
   };
 
-  const filteredPopular = getFiltered(popularRestaurants);
-  const filteredAll = getFiltered(allRestaurants);
-  const noResults =
-    (searchQuery || activeCategory) &&
-    filteredPopular.length === 0 &&
-    filteredAll.length === 0;
+  const filteredGrid = applyFilters(isFiltered ? allCombined : allRestaurants);
+  const noResults = isFiltered && filteredGrid.length === 0;
 
-  return (
-    <SafeAreaView className="flex-1 bg-white dark:bg-gray-900" edges={["top"]}>
-      <ScrollView
-        className="flex-1"
-        contentContainerStyle={{ paddingBottom: 20 }}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Header */}
-        <LinearGradient
-          colors={["#ff4757", "#ff5252"]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={{ paddingHorizontal: 24, paddingTop: 16, paddingBottom: 32, borderBottomLeftRadius: 24, borderBottomRightRadius: 24 }}
-        >
-          <View className="flex-row items-center justify-center gap-2 mb-5">
-            <Image
-              source={require("@/assets/images/icon.png")}
-              style={{ width: 40, height: 40, borderRadius: 20 }}
-            />
-            <Text className="text-white text-3xl font-bold">FoodMatch</Text>
-          </View>
-
-          <Text className="text-white text-xl mb-4 font-medium">Olá, Roberto!</Text>
-
-          {/* Search Bar */}
-          <View className="relative">
-            <View className="absolute left-4 top-0 bottom-0 justify-center z-10">
-              <Search size={20} color="#9ca3af" />
-            </View>
-            <TextInput
-              placeholder="Buscar restaurantes ou cozinhas..."
-              placeholderTextColor="#9ca3af"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              className="w-full pl-12 pr-12 py-3 rounded-full bg-white text-foreground text-base"
-              style={{ shadowColor: "#000", shadowOpacity: 0.1, shadowRadius: 8, elevation: 4 }}
-            />
-            <Pressable className="absolute right-4 top-0 bottom-0 justify-center">
-              <SlidersHorizontal size={20} color="#ff4757" />
-            </Pressable>
-          </View>
-        </LinearGradient>
-
-        <View className="px-6 pt-4">
-          {/* Category Pills */}
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            className="mb-6 -mx-2"
-            contentContainerStyle={{ paddingHorizontal: 8, paddingBottom: 8 }}
-          >
-            {selectedTypes.length > 0 ? (
-              selectedTypes.map((type) => (
-                <CategoryPill
-                  key={type}
-                  icon={cuisineIcons[type] ?? "🍽️"}
-                  label={type}
-                  isActive={activeCategory === type}
-                  onPress={() =>
-                    setActiveCategory(activeCategory === type ? null : type)
-                  }
-                />
-              ))
-            ) : (
-              <View className="flex-1 py-4 bg-secondary/30 rounded-2xl px-4">
-                <Text className="text-sm text-muted-foreground text-center">
-                  Nenhuma preferência selecionada. Configure no Perfil.
-                </Text>
+  const ListHeader = (
+    <>
+      <LinearGradient colors={["#ff4757", "#ff5252"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.headerGradient}>
+        <View style={styles.logoRow}>
+          <Image source={require("@/assets/images/icon.png")} style={styles.logoImage} />
+          <Text style={styles.logoText}>FoodMatch</Text>
+        </View>
+        <Text style={styles.greeting}>Olá, Roberto!</Text>
+        <View style={styles.searchWrapper}>
+          <Search size={20} color="#9ca3af" style={styles.searchIconLeft} />
+          <TextInput
+            placeholder="Buscar restaurantes ou cozinhas..."
+            placeholderTextColor="#9ca3af"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            style={styles.searchInput}
+          />
+          <TouchableOpacity style={styles.searchIconRight} onPress={() => setFilterVisible(true)}>
+            <SlidersHorizontal size={20} color="#ff4757" />
+            {filterBadge > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{filterBadge}</Text>
               </View>
             )}
-          </ScrollView>
-
-          {/* No Results */}
-          {noResults && (
-            <View className="items-center py-12">
-              <Text className="text-lg text-gray-500">
-                Nenhum restaurante encontrado
-              </Text>
-              <Text className="text-sm text-gray-400 mt-2">
-                Tente buscar por outra categoria ou termo
-              </Text>
-            </View>
-          )}
-
-          {/* Featured - only when no filters */}
-          {!searchQuery && !activeCategory && (
-            <View className="mb-8">
-              <View className="flex-row items-center justify-between mb-4">
-                <Text className="text-xl font-semibold text-primary">
-                  Recomendado para Você
-                </Text>
-                <Pressable onPress={() => router.push("/all-restaurants" as any)} className="flex-row items-center gap-1">
-                  <Text className="text-sm text-primary">Ver Mais</Text>
-                  <ChevronRight size={16} color="#ff4757" />
-                </Pressable>
-              </View>
-              <RestaurantCard restaurant={featuredRestaurant} featured />
-            </View>
-          )}
-
-          {/* Popular */}
-          {filteredPopular.length > 0 && (
-            <View className="mb-8">
-              <View className="flex-row items-center justify-between mb-4">
-                <Text className="text-xl font-semibold text-foreground dark:text-white">
-                  {searchQuery || activeCategory
-                    ? "Resultados Populares"
-                    : "Restaurantes Populares"}
-                </Text>
-                <Pressable onPress={() => router.push("/all-restaurants" as any)} className="flex-row items-center gap-1">
-                  <Text className="text-sm text-primary">Todos</Text>
-                  <ChevronRight size={16} color="#ff4757" />
-                </Pressable>
-              </View>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                className="-mx-2"
-                contentContainerStyle={{ paddingHorizontal: 8 }}
-              >
-                {filteredPopular.map((r) => (
-                  <RestaurantCard key={r.id} restaurant={r} />
-                ))}
-              </ScrollView>
-            </View>
-          )}
-
-          {/* All Restaurants */}
-          {filteredAll.length > 0 && (
-            <View className="mb-8">
-              <Text className="text-xl font-semibold text-foreground dark:text-white mb-4">
-                {searchQuery || activeCategory
-                  ? "Mais Resultados"
-                  : "Todos os Restaurantes"}
-              </Text>
-              <View className="flex-row flex-wrap gap-4">
-                {filteredAll.map((r) => (
-                  <View key={r.id} style={{ width: "47%" }}>
-                    <RestaurantCard restaurant={r} featured />
-                  </View>
-                ))}
-              </View>
-            </View>
-          )}
+          </TouchableOpacity>
         </View>
-      </ScrollView>
+      </LinearGradient>
+
+      <View style={styles.body}>
+        <FlatList
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          data={selectedTypes}
+          keyExtractor={(item) => item}
+          style={styles.pillsList}
+          contentContainerStyle={styles.pillsContent}
+          renderItem={({ item: type }) => (
+            <CategoryPill
+              icon={cuisineIcons[type] ?? "🍽️"}
+              label={type}
+              isActive={activeCategory === type}
+              onPress={() => setActiveCategory(activeCategory === type ? null : type)}
+            />
+          )}
+          ListEmptyComponent={null}
+        />
+
+        {noResults ? (
+          <View style={styles.noResults}>
+            <Text style={styles.noResultsTitle}>Nenhum restaurante encontrado</Text>
+            <Text style={styles.noResultsSub}>Tente buscar por outra categoria ou termo</Text>
+          </View>
+        ) : null}
+
+        {!isFiltered && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Recomendado para Você</Text>
+            </View>
+            <RestaurantCard restaurant={featuredRestaurant} featured />
+          </View>
+        )}
+
+        {!isFiltered && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Restaurantes Populares</Text>
+            </View>
+            <FlatList
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              data={popularRestaurants}
+              keyExtractor={(item) => item.id.toString()}
+              renderItem={({ item }) => <RestaurantCard restaurant={item} />}
+            />
+          </View>
+        )}
+
+        {filteredGrid.length > 0 && (
+          <Text style={styles.allTitle}>
+            {isFiltered ? "Resultados" : "Todos os Restaurantes"}
+          </Text>
+        )}
+      </View>
+    </>
+  );
+
+  return (
+    <SafeAreaView style={styles.container} edges={["top"]}>
+      <FilterModal visible={filterVisible} onClose={() => setFilterVisible(false)} />
+      <FlatList
+        data={filteredGrid}
+        keyExtractor={(item) => item.id.toString()}
+        numColumns={2}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.listContent}
+        columnWrapperStyle={filteredGrid.length > 0 ? styles.columnWrapper : undefined}
+        ListHeaderComponent={ListHeader}
+        renderItem={({ item }) => <View style={styles.allCardWrapper}><RestaurantCard restaurant={item} featured /></View>}
+      />
     </SafeAreaView>
   );
+}
+
+function makeStyles(colors: ReturnType<typeof import("@/hooks/useColors").useColors>) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.bg },
+    headerGradient: { paddingHorizontal: 24, paddingTop: 16, paddingBottom: 32, borderBottomLeftRadius: 24, borderBottomRightRadius: 24 },
+    logoRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 20 },
+    logoImage: { width: 40, height: 40, borderRadius: 20 },
+    logoText: { color: "#ffffff", fontSize: 28, fontWeight: "700" },
+    greeting: { color: "#ffffff", fontSize: 20, fontWeight: "500", marginBottom: 16 },
+    searchWrapper: { flexDirection: "row", alignItems: "center", backgroundColor: "#ffffff", borderRadius: 999, paddingHorizontal: 16, elevation: 4 },
+    searchIconLeft: { marginRight: 8 },
+    searchInput: { flex: 1, paddingVertical: 12, color: "#1f2937", fontSize: 15 },
+    searchIconRight: { marginLeft: 8, position: "relative" },
+    badge: { position: "absolute", top: -6, right: -6, backgroundColor: "#ff4757", borderRadius: 8, minWidth: 16, height: 16, alignItems: "center", justifyContent: "center", paddingHorizontal: 3 },
+    badgeText: { color: "#ffffff", fontSize: 10, fontWeight: "700" },
+    body: { paddingHorizontal: 24, paddingTop: 16 },
+    pillsList: { marginBottom: 24, marginHorizontal: -8 },
+    pillsContent: { paddingHorizontal: 8, paddingBottom: 8 },
+    noPrefsBox: { flex: 1, paddingVertical: 16, paddingHorizontal: 16, backgroundColor: colors.surface, borderRadius: 16 },
+    noPrefsText: { fontSize: 13, color: colors.textMuted, textAlign: "center" },
+    noResults: { alignItems: "center", paddingVertical: 48 },
+    noResultsTitle: { fontSize: 17, color: colors.textMuted },
+    noResultsSub: { fontSize: 13, color: colors.textLight, marginTop: 8 },
+    section: { marginBottom: 32 },
+    sectionHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 },
+    sectionTitle: { fontSize: 20, fontWeight: "600", color: colors.text },
+    sectionAction: { flexDirection: "row", alignItems: "center", gap: 4 },
+    sectionActionText: { fontSize: 13, color: "#ff4757" },
+    allTitle: { fontSize: 20, fontWeight: "600", color: colors.text, marginBottom: 16 },
+    listContent: { paddingBottom: 24 },
+    columnWrapper: { paddingHorizontal: 24, gap: 16, marginBottom: 16 },
+    allCardWrapper: { flex: 1 },
+  });
 }

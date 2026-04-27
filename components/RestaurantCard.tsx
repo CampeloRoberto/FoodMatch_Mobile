@@ -1,7 +1,8 @@
-import { View, Text, Pressable, Image } from "react-native";
+import { View, Text, TouchableOpacity, Image, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import { Star, Heart } from "lucide-react-native";
 import { useFavorites } from "@/context/FavoritesContext";
+import { useColors } from "@/hooks/useColors";
 import type { Restaurant } from "@/types";
 
 interface RestaurantCardProps {
@@ -13,100 +14,78 @@ export function RestaurantCard({ restaurant, featured = false }: RestaurantCardP
   const router = useRouter();
   const { isFavorite, toggleFavorite } = useFavorites();
   const favorited = isFavorite(restaurant.id);
+  const colors = useColors();
+  const styles = makeStyles(colors);
 
   const goToDetails = () => router.push(`/restaurant/${restaurant.id}` as any);
 
   if (featured) {
     return (
-      <Pressable
-        onPress={goToDetails}
-        className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-lg mb-2"
-      >
-        {/* Image area */}
-        <View className="relative h-48">
-          <Image
-            source={{ uri: restaurant.image }}
-            style={{ width: "100%", height: "100%" }}
-            resizeMode="cover"
-          />
-          {/* Heart button — stops propagation so it doesn't also navigate */}
-          <Pressable
-            onPress={(e) => {
-              e.stopPropagation?.();
-              toggleFavorite(restaurant.id);
-            }}
+      <TouchableOpacity onPress={goToDetails} style={styles.featuredCard}>
+        <View style={styles.featuredImageWrapper}>
+          <Image source={{ uri: restaurant.image }} style={styles.featuredImage} resizeMode="cover" />
+          <TouchableOpacity
+            onPress={(e) => { e.stopPropagation?.(); toggleFavorite(restaurant.id); }}
             hitSlop={8}
-            className="absolute top-3 right-3 w-10 h-10 bg-white dark:bg-gray-700 rounded-full items-center justify-center shadow-md"
+            style={styles.heartBtn}
           >
-            <Heart
-              size={20}
-              color={favorited ? "#ff4747" : "#9ca3af"}
-              fill={favorited ? "#ff4747" : "none"}
-            />
-          </Pressable>
+            <Heart size={20} color={favorited ? "#ff4747" : "#9ca3af"} fill={favorited ? "#ff4747" : "none"} />
+          </TouchableOpacity>
         </View>
-
-        {/* Info */}
-        <View className="p-4">
-          <Text className="text-xl font-semibold mb-2 text-foreground dark:text-white">
-            {restaurant.name}
-          </Text>
-          <View className="flex-row items-center gap-2 mb-4">
+        <View style={styles.featuredInfo}>
+          <Text style={styles.featuredName}>{restaurant.name}</Text>
+          <View style={styles.metaRow}>
             <Star size={14} color="#FFB800" fill="#FFB800" />
-            <Text className="font-semibold text-foreground dark:text-white text-sm">
-              {restaurant.rating}
-            </Text>
-            <Text className="text-muted-foreground dark:text-gray-400 text-sm">•</Text>
-            <Text className="text-muted-foreground dark:text-gray-400 text-sm">
-              {restaurant.distance}
-            </Text>
-            <Text className="text-muted-foreground dark:text-gray-400 text-sm">•</Text>
-            <Text className="text-muted-foreground dark:text-gray-400 text-sm">
-              {restaurant.category} {restaurant.priceRange}
-            </Text>
+            <Text style={styles.metaText}>{restaurant.rating}</Text>
+            <Text style={styles.metaDot}>•</Text>
+            <Text style={styles.metaText}>{restaurant.distance}</Text>
+            <Text style={styles.metaDot}>•</Text>
+            <Text style={styles.metaText}>{restaurant.category} {restaurant.priceRange}</Text>
           </View>
-          <View className="bg-primary py-3 rounded-xl items-center">
-            <Text className="text-white font-bold tracking-wider text-sm">VER DETALHES</Text>
+          <View style={styles.detailsBtn}>
+            <Text style={styles.detailsBtnText}>VER DETALHES</Text>
           </View>
         </View>
-      </Pressable>
+      </TouchableOpacity>
     );
   }
 
-  // Compact card (horizontal scroll)
   return (
-    <Pressable
-      onPress={goToDetails}
-      className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-md w-40 mr-3"
-    >
-      <View className="h-32">
-        <Image
-          source={{ uri: restaurant.image }}
-          style={{ width: "100%", height: "100%" }}
-          resizeMode="cover"
-        />
+    <TouchableOpacity onPress={goToDetails} style={styles.compactCard}>
+      <View style={styles.compactImageWrapper}>
+        <Image source={{ uri: restaurant.image }} style={styles.compactImage} resizeMode="cover" />
       </View>
-      <View className="p-3">
-        <Text
-          className="font-semibold mb-1 text-foreground dark:text-white text-sm"
-          numberOfLines={1}
-        >
-          {restaurant.name}
-        </Text>
-        <View className="flex-row items-center gap-1">
+      <View style={styles.compactInfo}>
+        <Text style={styles.compactName} numberOfLines={1}>{restaurant.name}</Text>
+        <View style={styles.metaRow}>
           <Star size={12} color="#FFB800" fill="#FFB800" />
-          <Text className="font-semibold text-foreground dark:text-white text-xs">
-            {restaurant.rating}
-          </Text>
-          <Text className="text-muted-foreground dark:text-gray-400 text-xs">•</Text>
-          <Text
-            className="text-muted-foreground dark:text-gray-400 text-xs"
-            numberOfLines={1}
-          >
-            {restaurant.category}
-          </Text>
+          <Text style={styles.compactMeta}>{restaurant.rating}</Text>
+          <Text style={styles.metaDot}>•</Text>
+          <Text style={styles.compactMeta} numberOfLines={1}>{restaurant.category}</Text>
         </View>
       </View>
-    </Pressable>
+    </TouchableOpacity>
   );
+}
+
+function makeStyles(colors: ReturnType<typeof import("@/hooks/useColors").useColors>) {
+  return StyleSheet.create({
+    featuredCard: { backgroundColor: colors.card, borderRadius: 16, overflow: "hidden", elevation: 4, marginBottom: 8 },
+    featuredImageWrapper: { height: 192, position: "relative" },
+    featuredImage: { width: "100%", height: "100%" },
+    heartBtn: { position: "absolute", top: 12, right: 12, width: 40, height: 40, backgroundColor: colors.card, borderRadius: 20, alignItems: "center", justifyContent: "center", elevation: 4 },
+    featuredInfo: { padding: 16 },
+    featuredName: { fontSize: 18, fontWeight: "600", marginBottom: 8, color: colors.text },
+    metaRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 16, flexWrap: "wrap" },
+    metaText: { fontSize: 13, color: colors.textMuted, fontWeight: "500" },
+    metaDot: { fontSize: 13, color: colors.textLight },
+    detailsBtn: { backgroundColor: "#ff4757", paddingVertical: 12, borderRadius: 12, alignItems: "center" },
+    detailsBtnText: { color: "#ffffff", fontWeight: "700", fontSize: 13, letterSpacing: 1 },
+    compactCard: { backgroundColor: colors.card, borderRadius: 16, overflow: "hidden", elevation: 3, width: 160, marginRight: 12 },
+    compactImageWrapper: { height: 128 },
+    compactImage: { width: "100%", height: "100%" },
+    compactInfo: { padding: 12 },
+    compactName: { fontWeight: "600", marginBottom: 4, color: colors.text, fontSize: 13 },
+    compactMeta: { fontSize: 11, color: colors.textMuted, fontWeight: "500" },
+  });
 }

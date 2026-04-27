@@ -1,76 +1,86 @@
-import { View, Text, ScrollView } from "react-native";
+import { View, Text, FlatList, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { Heart } from "lucide-react-native";
 import { RestaurantCard } from "@/components/RestaurantCard";
 import { useFavorites } from "@/context/FavoritesContext";
+import { useColors } from "@/hooks/useColors";
+import type { Restaurant } from "@/types";
 
 export default function FavoritesScreen() {
   const { favorites } = useFavorites();
+  const colors = useColors();
+  const styles = makeStyles(colors);
 
   return (
-    <SafeAreaView className="flex-1 bg-white dark:bg-gray-900" edges={["top"]}>
-      <ScrollView
-        className="flex-1"
-        contentContainerStyle={{ paddingBottom: 20 }}
+    <SafeAreaView style={styles.container} edges={["top"]}>
+      <FlatList
+        data={favorites}
+        keyExtractor={(item) => item.id.toString()}
+        numColumns={2}
         showsVerticalScrollIndicator={false}
-      >
-        {/* Header */}
-        <LinearGradient
-          colors={["#ff4757", "#ff5252"]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={{
-            paddingHorizontal: 24,
-            paddingTop: 24,
-            paddingBottom: 32,
-            borderBottomLeftRadius: 24,
-            borderBottomRightRadius: 24,
-          }}
-        >
-          <View className="flex-row items-center gap-3 mb-2">
-            <View className="w-12 h-12 bg-white/20 rounded-full items-center justify-center">
-              <Heart size={24} color="white" fill="white" />
+        contentContainerStyle={styles.listContent}
+        columnWrapperStyle={favorites.length > 0 ? styles.columnWrapper : undefined}
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <View style={styles.emptyIcon}>
+              <Heart size={48} color="#ff4757" />
             </View>
-            <View>
-              <Text className="text-white text-3xl font-bold">Favoritos</Text>
-              <Text className="text-white/80 text-sm">
-                {favorites.length}{" "}
-                {favorites.length === 1 ? "restaurante salvo" : "restaurantes salvos"}
-              </Text>
-            </View>
+            <Text style={styles.emptyTitle}>Nenhum favorito ainda</Text>
+            <Text style={styles.emptySubtitle}>
+              Toque no ícone de coração em qualquer restaurante para salvá-lo aqui.
+            </Text>
           </View>
-        </LinearGradient>
-
-        <View className="px-6 py-6">
-          {favorites.length > 0 ? (
-            <>
-              <Text className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                Toque no coração para remover dos favoritos
-              </Text>
-              <View className="flex-row flex-wrap gap-4">
-                {favorites.map((r) => (
-                  <View key={r.id} style={{ width: "47%" }}>
-                    <RestaurantCard restaurant={r} featured />
-                  </View>
-                ))}
+        }
+        ListHeaderComponent={
+          <>
+            <LinearGradient
+              colors={["#ff4757", "#ff5252"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.header}
+            >
+              <View style={styles.headerRow}>
+                <View style={styles.iconCircle}>
+                  <Heart size={24} color="white" fill="white" />
+                </View>
+                <View>
+                  <Text style={styles.headerTitle}>Favoritos</Text>
+                  <Text style={styles.headerSubtitle}>
+                    {favorites.length}{" "}
+                    {favorites.length === 1 ? "restaurante salvo" : "restaurantes salvos"}
+                  </Text>
+                </View>
               </View>
-            </>
-          ) : (
-            <View className="items-center justify-center py-20">
-              <View className="w-24 h-24 bg-red-50 dark:bg-red-900/20 rounded-full items-center justify-center mb-6">
-                <Heart size={48} color="#ff4757" />
-              </View>
-              <Text className="text-2xl font-semibold text-center text-foreground dark:text-white mb-3">
-                Nenhum favorito ainda
-              </Text>
-              <Text className="text-muted-foreground dark:text-gray-400 text-center max-w-xs">
-                Toque no ícone de coração em qualquer restaurante para salvá-lo aqui.
-              </Text>
-            </View>
-          )}
-        </View>
-      </ScrollView>
+            </LinearGradient>
+            {favorites.length > 0 && <Text style={styles.hint}>Toque no coração para remover dos favoritos</Text>}
+          </>
+        }
+        renderItem={({ item }: { item: Restaurant }) => (
+          <View style={styles.cardWrapper}>
+            <RestaurantCard restaurant={item} featured />
+          </View>
+        )}
+      />
     </SafeAreaView>
   );
+}
+
+function makeStyles(colors: ReturnType<typeof import("@/hooks/useColors").useColors>) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.bg },
+    listContent: { paddingBottom: 24 },
+    columnWrapper: { paddingHorizontal: 24, gap: 16, marginBottom: 16 },
+    header: { paddingHorizontal: 24, paddingTop: 24, paddingBottom: 32, borderBottomLeftRadius: 24, borderBottomRightRadius: 24, marginBottom: 8 },
+    headerRow: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 8 },
+    iconCircle: { width: 48, height: 48, backgroundColor: "rgba(255,255,255,0.2)", borderRadius: 24, alignItems: "center", justifyContent: "center" },
+    headerTitle: { color: "#ffffff", fontSize: 28, fontWeight: "700" },
+    headerSubtitle: { color: "rgba(255,255,255,0.8)", fontSize: 14 },
+    hint: { fontSize: 13, color: colors.textMuted, paddingHorizontal: 24, paddingBottom: 16, paddingTop: 8 },
+    cardWrapper: { flex: 1 },
+    emptyContainer: { alignItems: "center", justifyContent: "center", paddingVertical: 80, paddingHorizontal: 32 },
+    emptyIcon: { width: 96, height: 96, backgroundColor: "#fff1f2", borderRadius: 48, alignItems: "center", justifyContent: "center", marginBottom: 24 },
+    emptyTitle: { fontSize: 22, fontWeight: "600", textAlign: "center", color: colors.text, marginBottom: 12 },
+    emptySubtitle: { color: colors.textMuted, textAlign: "center", fontSize: 14, lineHeight: 20 },
+  });
 }

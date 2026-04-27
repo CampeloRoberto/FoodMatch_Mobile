@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { View, Text, ScrollView, TextInput, Pressable } from "react-native";
+import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ArrowLeft, Search } from "lucide-react-native";
 import { RestaurantCard } from "@/components/RestaurantCard";
 import { allRestaurants, popularRestaurants, featuredRestaurant } from "@/data/restaurants";
+import { useColors } from "@/hooks/useColors";
 import type { Restaurant } from "@/types";
 
 const ALL: Restaurant[] = [
@@ -17,72 +18,82 @@ export default function AllRestaurantsScreen() {
   const router = useRouter();
   const { title } = useLocalSearchParams<{ title?: string }>();
   const [query, setQuery] = useState("");
+  const colors = useColors();
+  const styles = makeStyles(colors);
 
   const filtered = query.trim()
-    ? ALL.filter(
-        (r) =>
-          r.name.toLowerCase().includes(query.toLowerCase()) ||
-          r.category.toLowerCase().includes(query.toLowerCase())
-      )
+    ? ALL.filter((r) => r.name.toLowerCase().includes(query.toLowerCase()) || r.category.toLowerCase().includes(query.toLowerCase()))
     : ALL;
 
   return (
-    <SafeAreaView className="flex-1 bg-white dark:bg-gray-900" edges={["top"]}>
-      {/* Header */}
-      <View className="flex-row items-center px-4 py-3 border-b border-gray-100 dark:border-gray-800">
-        <Pressable
-          onPress={() => router.back()}
-          className="w-10 h-10 rounded-full items-center justify-center mr-3"
-        >
-          <ArrowLeft size={22} color="#1f2937" />
-        </Pressable>
-        <Text className="text-xl font-bold text-foreground dark:text-white flex-1">
-          {title ?? "Todos os Restaurantes"}
-        </Text>
+    <SafeAreaView style={styles.container} edges={["top"]}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <ArrowLeft size={22} color={colors.text} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>{title ?? "Todos os Restaurantes"}</Text>
       </View>
 
-      {/* Search */}
-      <View className="px-4 py-3">
-        <View className="flex-row items-center bg-gray-100 dark:bg-gray-800 rounded-2xl px-4 gap-3">
-          <Search size={18} color="#9ca3af" />
+      <View style={styles.searchWrapper}>
+        <View style={styles.searchBar}>
+          <Search size={18} color={colors.textLight} />
           <TextInput
             value={query}
             onChangeText={setQuery}
             placeholder="Buscar por nome ou culinária..."
-            placeholderTextColor="#9ca3af"
-            className="flex-1 py-3 text-foreground dark:text-white text-sm"
+            placeholderTextColor={colors.textLight}
+            style={styles.searchInput}
           />
           {query.length > 0 && (
-            <Pressable onPress={() => setQuery("")}>
-              <Text className="text-gray-400 text-lg">✕</Text>
-            </Pressable>
+            <TouchableOpacity onPress={() => setQuery("")}>
+              <Text style={styles.clearBtn}>✕</Text>
+            </TouchableOpacity>
           )}
         </View>
       </View>
 
-      <ScrollView
-        className="flex-1 px-4"
+      <FlatList
+        data={filtered}
+        keyExtractor={(item) => item.id.toString()}
+        numColumns={2}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 24 }}
-      >
-        <Text className="text-sm text-gray-500 dark:text-gray-400 mb-3">
-          {filtered.length} {filtered.length === 1 ? "restaurante" : "restaurantes"}
-        </Text>
-
-        {filtered.length === 0 ? (
-          <View className="items-center py-16">
-            <Text className="text-gray-400 text-base">Nenhum resultado para "{query}"</Text>
+        contentContainerStyle={styles.listContent}
+        columnWrapperStyle={styles.columnWrapper}
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>Nenhum resultado para "{query}"</Text>
           </View>
-        ) : (
-          <View className="flex-row flex-wrap gap-4">
-            {filtered.map((r) => (
-              <View key={r.id} style={{ width: "47%" }}>
-                <RestaurantCard restaurant={r} featured />
-              </View>
-            ))}
+        }
+        ListHeaderComponent={
+          <Text style={styles.countText}>
+            {filtered.length} {filtered.length === 1 ? "restaurante" : "restaurantes"}
+          </Text>
+        }
+        renderItem={({ item }) => (
+          <View style={styles.cardWrapper}>
+            <RestaurantCard restaurant={item} featured />
           </View>
         )}
-      </ScrollView>
+      />
     </SafeAreaView>
   );
+}
+
+function makeStyles(colors: ReturnType<typeof import("@/hooks/useColors").useColors>) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.bg },
+    header: { flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.border },
+    backButton: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center", marginRight: 12 },
+    headerTitle: { fontSize: 20, fontWeight: "700", color: colors.text, flex: 1 },
+    searchWrapper: { paddingHorizontal: 16, paddingVertical: 12 },
+    searchBar: { flexDirection: "row", alignItems: "center", backgroundColor: colors.inputBg, borderRadius: 16, paddingHorizontal: 16, gap: 12 },
+    searchInput: { flex: 1, paddingVertical: 12, color: colors.text, fontSize: 14 },
+    clearBtn: { color: colors.textLight, fontSize: 18 },
+    listContent: { paddingHorizontal: 16, paddingBottom: 24 },
+    columnWrapper: { gap: 16, marginBottom: 16 },
+    cardWrapper: { flex: 1 },
+    countText: { fontSize: 13, color: colors.textMuted, marginBottom: 12 },
+    emptyContainer: { alignItems: "center", paddingVertical: 64 },
+    emptyText: { color: colors.textMuted, fontSize: 15 },
+  });
 }
