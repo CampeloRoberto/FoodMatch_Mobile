@@ -68,7 +68,7 @@ Seu app de delivery favorito, feito com React Native + Expo
 
 ## 🗂 Estrutura do Projeto
 
-text
+```
 FoodMatch_mobile/
 ├── app/                        # Rotas (Expo Router)
 │   ├── (tabs)/                 # Grupo de abas
@@ -105,10 +105,9 @@ FoodMatch_mobile/
 ├── hooks/                      # Custom hooks
 ├── constants/                  # Constantes da aplicação
 └── assets/                     # Imagens e ícones
-
+```
 
 ---
-
 ## 🚀 Como rodar
 
 ### Pré-requisitos
