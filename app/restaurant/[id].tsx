@@ -2,9 +2,10 @@ import { useState } from "react";
 import {
   View,
   Text,
-  ScrollView,
-  Pressable,
+  FlatList,
+  TouchableOpacity,
   Image,
+  StyleSheet,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -23,12 +24,85 @@ import { findRestaurantById, getRestaurantDetail } from "@/data/restaurants";
 import { getMenuByRestaurant, getMenuCategories } from "@/data/menus";
 import { getReviewsByRestaurant } from "@/data/reviews";
 import { useCart } from "@/context/CartContext";
+import { useColors } from "@/hooks/useColors";
 import type { MenuItem, MenuCategory } from "@/types";
+
+function MenuItemCard({
+  item,
+  quantity,
+  onAdd,
+  onRemove,
+}: {
+  item: MenuItem;
+  quantity: number;
+  onAdd: () => void;
+  onRemove: () => void;
+}) {
+  const colors = useColors();
+  const styles = makeStyles(colors);
+
+  return (
+    <View style={styles.menuItem}>
+      <Image source={{ uri: item.image }} style={styles.menuItemImage} resizeMode="cover" />
+      <View style={styles.menuItemInfo}>
+        <View>
+          <Text style={styles.menuItemName} numberOfLines={1}>{item.name}</Text>
+          <Text style={styles.menuItemDesc} numberOfLines={2}>{item.description}</Text>
+        </View>
+        <View style={styles.menuItemBottom}>
+          <Text style={styles.menuItemPrice}>R$ {item.price.toFixed(2).replace(".", ",")}</Text>
+          {quantity === 0 ? (
+            <TouchableOpacity onPress={onAdd} style={styles.addBtn}>
+              <Plus size={18} color="#fff" />
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.qtyRow}>
+              <TouchableOpacity onPress={onRemove} style={styles.qtyBtnOutline}>
+                <Minus size={14} color="#ff4747" />
+              </TouchableOpacity>
+              <Text style={styles.qtyText}>{quantity}</Text>
+              <TouchableOpacity onPress={onAdd} style={styles.qtyBtnFilled}>
+                <Plus size={14} color="#fff" />
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+      </View>
+    </View>
+  );
+}
+
+function ReviewCard({ review }: { review: any }) {
+  const colors = useColors();
+  const styles = makeStyles(colors);
+
+  return (
+    <View style={styles.reviewCard}>
+      <View style={styles.reviewTop}>
+        <View style={styles.reviewUser}>
+          <View style={styles.reviewAvatar}>
+            <Text style={styles.reviewAvatarText}>{review.userName[0]}</Text>
+          </View>
+          <Text style={styles.reviewUserName}>{review.userName}</Text>
+        </View>
+        <View style={styles.reviewStars}>
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Star key={i} size={12} color="#FFB800" fill={i < review.rating ? "#FFB800" : "none"} />
+          ))}
+        </View>
+      </View>
+      <Text style={styles.reviewComment}>{review.comment}</Text>
+      <Text style={styles.reviewDate}>{new Date(review.date).toLocaleDateString("pt-BR")}</Text>
+    </View>
+  );
+}
 
 export default function RestaurantDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { items, addItem, removeItem, updateQuantity, itemCount, total } = useCart();
+  const colors = useColors();
+  const styles = makeStyles(colors);
 
   const restaurantId = Number(id);
   const restaurant = findRestaurantById(restaurantId);
@@ -45,11 +119,11 @@ export default function RestaurantDetailScreen() {
 
   if (!restaurant) {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-white dark:bg-gray-900">
-        <Text className="text-gray-500">Restaurante não encontrado</Text>
-        <Pressable onPress={() => router.back()} className="mt-4">
-          <Text className="text-primary font-semibold">Voltar</Text>
-        </Pressable>
+      <SafeAreaView style={styles.notFoundContainer}>
+        <Text style={styles.notFoundText}>Restaurante não encontrado</Text>
+        <TouchableOpacity onPress={() => router.back()} style={styles.notFoundBack}>
+          <Text style={styles.notFoundBackText}>Voltar</Text>
+        </TouchableOpacity>
       </SafeAreaView>
     );
   }
@@ -59,372 +133,231 @@ export default function RestaurantDetailScreen() {
 
   const filteredItems = menuItems.filter((m) => m.category === activeCategory);
 
-  return (
-    <View className="flex-1 bg-white dark:bg-gray-900">
-      {/* Hero image */}
-      <View style={{ height: 260, position: "relative" }}>
-        <Image
-          source={{ uri: restaurant.image }}
-          style={{ width: "100%", height: "100%" }}
-          resizeMode="cover"
-        />
-        {/* Overlay gradient */}
-        <View
-          style={{
-            position: "absolute",
-            bottom: 0,
-            left: 0,
-            right: 0,
-            height: 100,
-            background: "transparent",
-          }}
-        />
-        {/* Back button */}
-        <SafeAreaView style={{ position: "absolute", top: 0, left: 0, right: 0 }} edges={["top"]}>
-          <View className="flex-row items-center justify-between px-4 pt-2">
-            <Pressable
-              onPress={() => router.back()}
-              className="w-10 h-10 bg-white/90 rounded-full items-center justify-center shadow"
-            >
-              <ArrowLeft size={20} color="#1f2937" />
-            </Pressable>
-            <Pressable
-              onPress={() => setIsFavorite(!isFavorite)}
-              className="w-10 h-10 bg-white/90 rounded-full items-center justify-center shadow"
-            >
-              <Heart
-                size={20}
-                color={isFavorite ? "#ff4747" : "#9ca3af"}
-                fill={isFavorite ? "#ff4747" : "none"}
-              />
-            </Pressable>
+  const ListHeader = (
+    <>
+      {/* Hero */}
+      <View style={styles.hero}>
+        <Image source={{ uri: restaurant.image }} style={styles.heroImage} resizeMode="cover" />
+        <SafeAreaView style={styles.heroOverlay} edges={["top"]}>
+          <View style={styles.heroButtons}>
+            <TouchableOpacity onPress={() => router.back()} style={styles.heroBtn}>
+              <ArrowLeft size={20} color={colors.text} />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setIsFavorite(!isFavorite)} style={styles.heroBtn}>
+              <Heart size={20} color={isFavorite ? "#ff4747" : "#9ca3af"} fill={isFavorite ? "#ff4747" : "none"} />
+            </TouchableOpacity>
           </View>
         </SafeAreaView>
       </View>
 
-      <ScrollView
-        className="flex-1"
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: itemCount > 0 ? 100 : 24 }}
-      >
-        {/* Restaurant header */}
-        <View className="px-5 pt-4 pb-3">
-          <View className="flex-row items-start justify-between">
-            <View className="flex-1 mr-3">
-              <Text className="text-2xl font-bold text-foreground dark:text-white">
-                {restaurant.name}
-              </Text>
-              <Text className="text-gray-500 dark:text-gray-400 text-sm mt-1">
-                {restaurant.category} • {restaurant.priceRange}
-              </Text>
-            </View>
-            <View className="items-center bg-amber-50 dark:bg-amber-900/30 px-3 py-2 rounded-xl">
-              <View className="flex-row items-center gap-1">
-                <Star size={16} color="#FFB800" fill="#FFB800" />
-                <Text className="font-bold text-amber-600 dark:text-amber-400 text-base">
-                  {restaurant.rating}
-                </Text>
-              </View>
-              <Text className="text-xs text-gray-400 mt-0.5">
-                {reviews.length} avaliações
-              </Text>
-            </View>
+      {/* Restaurant info */}
+      <View style={styles.infoSection}>
+        <View style={styles.infoTopRow}>
+          <View style={styles.infoTitleBlock}>
+            <Text style={styles.restaurantName}>{restaurant.name}</Text>
+            <Text style={styles.restaurantMeta}>{restaurant.category} • {restaurant.priceRange}</Text>
           </View>
-
-          {detail?.description && (
-            <Text className="text-gray-600 dark:text-gray-300 text-sm mt-3 leading-5">
-              {detail.description}
-            </Text>
-          )}
-
-          {/* Info pills */}
-          {detail && (
-            <View className="mt-4 gap-2">
-              <View className="flex-row items-center gap-2">
-                <MapPin size={14} color="#ff4747" />
-                <Text className="text-sm text-gray-600 dark:text-gray-300 flex-1" numberOfLines={1}>
-                  {detail.address}
-                </Text>
-              </View>
-              <View className="flex-row items-center gap-2">
-                <Phone size={14} color="#ff4747" />
-                <Text className="text-sm text-gray-600 dark:text-gray-300">{detail.phone}</Text>
-              </View>
-              <View className="flex-row items-center gap-2">
-                <Clock size={14} color="#ff4747" />
-                <Text className="text-sm text-gray-600 dark:text-gray-300">{detail.hours}</Text>
-              </View>
+          <View style={styles.ratingBadge}>
+            <View style={styles.ratingRow}>
+              <Star size={16} color="#FFB800" fill="#FFB800" />
+              <Text style={styles.ratingValue}>{restaurant.rating}</Text>
             </View>
-          )}
+            <Text style={styles.ratingCount}>{reviews.length} avaliações</Text>
+          </View>
         </View>
 
-        {/* Divider */}
-        <View className="h-2 bg-gray-100 dark:bg-gray-800" />
+        {detail?.description && (
+          <Text style={styles.description}>{detail.description}</Text>
+        )}
 
-        {/* Tab switcher */}
-        <View className="flex-row px-5 pt-4 gap-4">
-          <Pressable
-            onPress={() => setActiveTab("menu")}
-            className={`pb-2 border-b-2 ${activeTab === "menu" ? "border-primary" : "border-transparent"}`}
-          >
-            <Text
-              className={`font-semibold text-base ${
-                activeTab === "menu" ? "text-primary" : "text-gray-400"
-              }`}
-            >
-              Cardápio
-            </Text>
-          </Pressable>
-          <Pressable
-            onPress={() => setActiveTab("reviews")}
-            className={`pb-2 border-b-2 ${activeTab === "reviews" ? "border-primary" : "border-transparent"}`}
-          >
-            <Text
-              className={`font-semibold text-base ${
-                activeTab === "reviews" ? "text-primary" : "text-gray-400"
-              }`}
-            >
-              Avaliações ({reviews.length})
-            </Text>
-          </Pressable>
-        </View>
-
-        {activeTab === "menu" ? (
-          <>
-            {/* Category pills */}
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              className="px-5 pt-3 pb-1"
-              contentContainerStyle={{ gap: 8 }}
-            >
-              {categories.map((cat) => (
-                <Pressable
-                  key={cat}
-                  onPress={() => setActiveCategory(cat)}
-                  style={{
-                    paddingHorizontal: 16,
-                    paddingVertical: 6,
-                    borderRadius: 999,
-                    backgroundColor: activeCategory === cat ? "#ff4747" : "#f3f4f6",
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontSize: 13,
-                      fontWeight: "600",
-                      color: activeCategory === cat ? "#fff" : "#6b7280",
-                    }}
-                  >
-                    {cat}
-                  </Text>
-                </Pressable>
-              ))}
-            </ScrollView>
-
-            {/* Menu items */}
-            <View className="px-5 pt-3 gap-3">
-              {filteredItems.map((item) => (
-                <MenuItemCard
-                  key={item.id}
-                  item={item}
-                  quantity={getItemQuantity(item.id)}
-                  onAdd={() => addItem(item, restaurant.id, restaurant.name)}
-                  onRemove={() => {
-                    const qty = getItemQuantity(item.id);
-                    if (qty <= 1) removeItem(item.id);
-                    else updateQuantity(item.id, qty - 1);
-                  }}
-                />
-              ))}
+        {detail && (
+          <View style={styles.detailPills}>
+            <View style={styles.detailRow}>
+              <MapPin size={14} color="#ff4747" />
+              <Text style={styles.detailText} numberOfLines={1}>{detail.address}</Text>
             </View>
-          </>
-        ) : (
-          <View className="px-5 pt-3 gap-3">
-            {reviews.length === 0 ? (
-              <View className="py-12 items-center">
-                <Text className="text-gray-400">Nenhuma avaliação ainda</Text>
-              </View>
-            ) : (
-              reviews.map((review) => (
-                <View
-                  key={review.id}
-                  className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-4"
-                >
-                  <View className="flex-row items-center justify-between mb-2">
-                    <View className="flex-row items-center gap-2">
-                      <View className="w-8 h-8 bg-primary/20 rounded-full items-center justify-center">
-                        <Text className="text-primary font-bold text-sm">
-                          {review.userName[0]}
-                        </Text>
-                      </View>
-                      <Text className="font-semibold text-foreground dark:text-white">
-                        {review.userName}
-                      </Text>
-                    </View>
-                    <View className="flex-row items-center gap-1">
-                      {Array.from({ length: 5 }).map((_, i) => (
-                        <Star
-                          key={i}
-                          size={12}
-                          color="#FFB800"
-                          fill={i < review.rating ? "#FFB800" : "none"}
-                        />
-                      ))}
-                    </View>
-                  </View>
-                  <Text className="text-gray-600 dark:text-gray-300 text-sm leading-5">
-                    {review.comment}
-                  </Text>
-                  <Text className="text-gray-400 text-xs mt-2">
-                    {new Date(review.date).toLocaleDateString("pt-BR")}
-                  </Text>
-                </View>
-              ))
-            )}
+            <View style={styles.detailRow}>
+              <Phone size={14} color="#ff4747" />
+              <Text style={styles.detailText}>{detail.phone}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Clock size={14} color="#ff4747" />
+              <Text style={styles.detailText}>{detail.hours}</Text>
+            </View>
           </View>
         )}
-      </ScrollView>
+      </View>
+
+      <View style={styles.divider} />
+
+      {/* Tabs */}
+      <View style={styles.tabs}>
+        <TouchableOpacity
+          onPress={() => setActiveTab("menu")}
+          style={[styles.tab, activeTab === "menu" && styles.tabActive]}
+        >
+          <Text style={[styles.tabText, activeTab === "menu" && styles.tabTextActive]}>Cardápio</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => setActiveTab("reviews")}
+          style={[styles.tab, activeTab === "reviews" && styles.tabActive]}
+        >
+          <Text style={[styles.tabText, activeTab === "reviews" && styles.tabTextActive]}>
+            Avaliações ({reviews.length})
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Category pills (menu tab) */}
+      {activeTab === "menu" && (
+        <FlatList
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          data={categories}
+          keyExtractor={(item) => item}
+          style={styles.catList}
+          contentContainerStyle={styles.catListContent}
+          renderItem={({ item: cat }) => (
+            <TouchableOpacity
+              onPress={() => setActiveCategory(cat as MenuCategory)}
+              style={[styles.catPill, activeCategory === cat && styles.catPillActive]}
+            >
+              <Text style={[styles.catPillText, activeCategory === cat && styles.catPillTextActive]}>
+                {cat}
+              </Text>
+            </TouchableOpacity>
+          )}
+        />
+      )}
+    </>
+  );
+
+  return (
+    <View style={styles.container}>
+      {activeTab === "menu" ? (
+        <FlatList
+          data={filteredItems}
+          keyExtractor={(item) => item.id.toString()}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: itemCount > 0 ? 100 : 24 }}
+          ListHeaderComponent={ListHeader}
+          renderItem={({ item }) => (
+            <View style={styles.menuItemWrapper}>
+              <MenuItemCard
+                item={item}
+                quantity={getItemQuantity(item.id)}
+                onAdd={() => addItem(item, restaurant.id, restaurant.name)}
+                onRemove={() => {
+                  const qty = getItemQuantity(item.id);
+                  if (qty <= 1) removeItem(item.id);
+                  else updateQuantity(item.id, qty - 1);
+                }}
+              />
+            </View>
+          )}
+        />
+      ) : (
+        <FlatList
+          data={reviews}
+          keyExtractor={(item) => item.id.toString()}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: itemCount > 0 ? 100 : 24 }}
+          ListHeaderComponent={ListHeader}
+          ListEmptyComponent={
+            <View style={styles.emptyReviews}>
+              <Text style={styles.emptyReviewsText}>Nenhuma avaliação ainda</Text>
+            </View>
+          }
+          renderItem={({ item }) => <ReviewCard review={item} />}
+        />
+      )}
 
       {/* Floating cart button */}
       {itemCount > 0 && (
-        <View
-          style={{
-            position: "absolute",
-            bottom: 0,
-            left: 0,
-            right: 0,
-            paddingHorizontal: 20,
-            paddingBottom: 24,
-            paddingTop: 12,
-            backgroundColor: "rgba(255,255,255,0.95)",
-            borderTopWidth: 1,
-            borderTopColor: "#e5e7eb",
-          }}
-        >
-          <Pressable
-            onPress={() => router.push("/cart")}
-            style={{
-              backgroundColor: "#ff4747",
-              borderRadius: 16,
-              paddingVertical: 14,
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-              paddingHorizontal: 20,
-            }}
-          >
-            <View
-              style={{
-                backgroundColor: "rgba(255,255,255,0.25)",
-                borderRadius: 8,
-                width: 28,
-                height: 28,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Text style={{ color: "#fff", fontWeight: "800", fontSize: 13 }}>
-                {itemCount}
-              </Text>
+        <View style={styles.cartBar}>
+          <TouchableOpacity onPress={() => router.push("/cart")} style={styles.cartBtn}>
+            <View style={styles.cartCountBadge}>
+              <Text style={styles.cartCountText}>{itemCount}</Text>
             </View>
-            <View className="flex-row items-center gap-2">
+            <View style={styles.cartBtnCenter}>
               <ShoppingCart size={18} color="#fff" />
-              <Text style={{ color: "#fff", fontWeight: "700", fontSize: 15 }}>
-                Ver carrinho
-              </Text>
+              <Text style={styles.cartBtnLabel}>Ver carrinho</Text>
             </View>
-            <Text style={{ color: "#fff", fontWeight: "700", fontSize: 15 }}>
-              R$ {total.toFixed(2).replace(".", ",")}
-            </Text>
-          </Pressable>
+            <Text style={styles.cartBtnTotal}>R$ {total.toFixed(2).replace(".", ",")}</Text>
+          </TouchableOpacity>
         </View>
       )}
     </View>
   );
 }
 
-function MenuItemCard({
-  item,
-  quantity,
-  onAdd,
-  onRemove,
-}: {
-  item: MenuItem;
-  quantity: number;
-  onAdd: () => void;
-  onRemove: () => void;
-}) {
-  return (
-    <View className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-sm flex-row">
-      <Image
-        source={{ uri: item.image }}
-        style={{ width: 88, height: 88 }}
-        resizeMode="cover"
-      />
-      <View className="flex-1 p-3 justify-between">
-        <View>
-          <Text className="font-semibold text-foreground dark:text-white text-sm" numberOfLines={1}>
-            {item.name}
-          </Text>
-          <Text className="text-gray-500 dark:text-gray-400 text-xs mt-0.5 leading-4" numberOfLines={2}>
-            {item.description}
-          </Text>
-        </View>
-        <View className="flex-row items-center justify-between mt-2">
-          <Text className="text-primary font-bold text-sm">
-            R$ {item.price.toFixed(2).replace(".", ",")}
-          </Text>
-          {quantity === 0 ? (
-            <Pressable
-              onPress={onAdd}
-              style={{
-                backgroundColor: "#ff4747",
-                borderRadius: 8,
-                width: 32,
-                height: 32,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Plus size={18} color="#fff" />
-            </Pressable>
-          ) : (
-            <View className="flex-row items-center gap-2">
-              <Pressable
-                onPress={onRemove}
-                style={{
-                  borderWidth: 1.5,
-                  borderColor: "#ff4747",
-                  borderRadius: 8,
-                  width: 28,
-                  height: 28,
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Minus size={14} color="#ff4747" />
-              </Pressable>
-              <Text className="text-foreground dark:text-white font-bold text-sm w-5 text-center">
-                {quantity}
-              </Text>
-              <Pressable
-                onPress={onAdd}
-                style={{
-                  backgroundColor: "#ff4747",
-                  borderRadius: 8,
-                  width: 28,
-                  height: 28,
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Plus size={14} color="#fff" />
-              </Pressable>
-            </View>
-          )}
-        </View>
-      </View>
-    </View>
-  );
+function makeStyles(colors: ReturnType<typeof import("@/hooks/useColors").useColors>) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.bg },
+    notFoundContainer: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.bg },
+    notFoundText: { color: colors.textMuted, fontSize: 16 },
+    notFoundBack: { marginTop: 16 },
+    notFoundBackText: { color: "#ff4757", fontWeight: "600" },
+    hero: { height: 260, position: "relative" },
+    heroImage: { width: "100%", height: "100%" },
+    heroOverlay: { position: "absolute", top: 0, left: 0, right: 0 },
+    heroButtons: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingTop: 8 },
+    heroBtn: { width: 40, height: 40, backgroundColor: colors.surface, borderRadius: 20, alignItems: "center", justifyContent: "center", elevation: 3 },
+    infoSection: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12, backgroundColor: colors.bg },
+    infoTopRow: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between" },
+    infoTitleBlock: { flex: 1, marginRight: 12 },
+    restaurantName: { fontSize: 22, fontWeight: "700", color: colors.text },
+    restaurantMeta: { color: colors.textMuted, fontSize: 13, marginTop: 4 },
+    ratingBadge: { alignItems: "center", backgroundColor: "#fffbeb", paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12 },
+    ratingRow: { flexDirection: "row", alignItems: "center", gap: 4 },
+    ratingValue: { fontWeight: "700", color: "#d97706", fontSize: 15 },
+    ratingCount: { fontSize: 11, color: colors.textLight, marginTop: 2 },
+    description: { color: colors.textMuted, fontSize: 13, marginTop: 12, lineHeight: 20 },
+    detailPills: { marginTop: 16, gap: 8 },
+    detailRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+    detailText: { fontSize: 13, color: colors.textMuted, flex: 1 },
+    divider: { height: 8, backgroundColor: colors.bgSecondary },
+    tabs: { flexDirection: "row", paddingHorizontal: 20, paddingTop: 16, gap: 16, backgroundColor: colors.bg },
+    tab: { paddingBottom: 8, borderBottomWidth: 2, borderBottomColor: "transparent" },
+    tabActive: { borderBottomColor: "#ff4757" },
+    tabText: { fontWeight: "600", fontSize: 15, color: colors.textLight },
+    tabTextActive: { color: "#ff4757" },
+    catList: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 4 },
+    catListContent: { gap: 8 },
+    catPill: { paddingHorizontal: 16, paddingVertical: 6, borderRadius: 999, backgroundColor: colors.inputBg },
+    catPillActive: { backgroundColor: "#ff4747" },
+    catPillText: { fontSize: 13, fontWeight: "600", color: colors.textMuted },
+    catPillTextActive: { color: "#ffffff" },
+    menuItemWrapper: { paddingHorizontal: 20, paddingTop: 12 },
+    menuItem: { backgroundColor: colors.card, borderRadius: 16, overflow: "hidden", elevation: 2, flexDirection: "row" },
+    menuItemImage: { width: 88, height: 88 },
+    menuItemInfo: { flex: 1, padding: 12, justifyContent: "space-between" },
+    menuItemName: { fontWeight: "600", color: colors.text, fontSize: 13 },
+    menuItemDesc: { color: colors.textMuted, fontSize: 11, marginTop: 2, lineHeight: 16 },
+    menuItemBottom: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 8 },
+    menuItemPrice: { color: "#ff4757", fontWeight: "700", fontSize: 13 },
+    addBtn: { backgroundColor: "#ff4747", borderRadius: 8, width: 32, height: 32, alignItems: "center", justifyContent: "center" },
+    qtyRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+    qtyBtnOutline: { borderWidth: 1.5, borderColor: "#ff4747", borderRadius: 8, width: 28, height: 28, alignItems: "center", justifyContent: "center" },
+    qtyBtnFilled: { backgroundColor: "#ff4747", borderRadius: 8, width: 28, height: 28, alignItems: "center", justifyContent: "center" },
+    qtyText: { fontWeight: "700", color: colors.text, fontSize: 13, width: 20, textAlign: "center" },
+    cartBar: { position: "absolute", bottom: 0, left: 0, right: 0, paddingHorizontal: 20, paddingBottom: 24, paddingTop: 12, backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.border },
+    cartBtn: { backgroundColor: "#ff4747", borderRadius: 16, paddingVertical: 14, paddingHorizontal: 20, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+    cartCountBadge: { backgroundColor: "rgba(255,255,255,0.25)", borderRadius: 8, width: 28, height: 28, alignItems: "center", justifyContent: "center" },
+    cartCountText: { color: "#ffffff", fontWeight: "800", fontSize: 13 },
+    cartBtnCenter: { flexDirection: "row", alignItems: "center", gap: 8 },
+    cartBtnLabel: { color: "#ffffff", fontWeight: "700", fontSize: 15 },
+    cartBtnTotal: { color: "#ffffff", fontWeight: "700", fontSize: 15 },
+    reviewCard: { backgroundColor: colors.cardAlt, borderRadius: 16, padding: 16, marginHorizontal: 20, marginTop: 12 },
+    reviewTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
+    reviewUser: { flexDirection: "row", alignItems: "center", gap: 8 },
+    reviewAvatar: { width: 32, height: 32, backgroundColor: "rgba(255,71,87,0.15)", borderRadius: 16, alignItems: "center", justifyContent: "center" },
+    reviewAvatarText: { color: "#ff4757", fontWeight: "700", fontSize: 13 },
+    reviewUserName: { fontWeight: "600", color: colors.text, fontSize: 14 },
+    reviewStars: { flexDirection: "row", gap: 2 },
+    reviewComment: { color: colors.textMuted, fontSize: 13, lineHeight: 20 },
+    reviewDate: { color: colors.textLight, fontSize: 11, marginTop: 8 },
+    emptyReviews: { paddingVertical: 48, alignItems: "center" },
+    emptyReviewsText: { color: colors.textLight, fontSize: 14 },
+  });
 }

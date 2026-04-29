@@ -1,107 +1,80 @@
+import { useTheme } from "@/context/ThemeContext";
+import { useColors } from "@/hooks/useColors";
+import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
+import {
+  ArrowLeft,
+  Bell,
+  ChevronRight,
+  CreditCard,
+  Globe,
+  Mail,
+  MapPin,
+  Moon,
+  Phone,
+  Shield,
+  SlidersHorizontal,
+  User,
+} from "lucide-react-native";
 import { useState } from "react";
 import {
-  View,
-  Text,
   ScrollView,
-  Pressable,
+  StyleSheet,
   Switch,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import Animated, { FadeInDown } from "react-native-reanimated";
-import { LinearGradient } from "expo-linear-gradient";
-import {
-  User,
-  Mail,
-  Phone,
-  MapPin,
-  CreditCard,
-  Bell,
-  Shield,
-  Globe,
-  Moon,
-  ChevronRight,
-  Check,
-  ArrowLeft,
-} from "lucide-react-native";
-import { useRouter } from "expo-router";
-import { useUserPreferences } from "@/context/UserPreferencesContext";
-import { useTheme } from "@/context/ThemeContext";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-const restaurantTypes = [
-  "Brasileira", "Italiana", "Japonesa", "Mexicana",
-  "Chinesa", "Árabe", "Fast Food", "Vegana",
-  "Vegetariana", "Frutos do Mar",
-];
-
-const dietaryRestrictions = [
-  "Sem Glúten", "Sem Lactose", "Vegano", "Vegetariano",
-  "Kosher", "Halal", "Sem Nozes", "Sem Frutos do Mar",
+const profileFields = [
+  { icon: <Mail size={20} color="#ff4757" />, label: "Email", value: "roberto@email.com" },
+  { icon: <Phone size={20} color="#ff4757" />, label: "Telefone", value: "(11) 98765-4321" },
+  { icon: <MapPin size={20} color="#ff4757" />, label: "Endereço", value: "Rua das Flores, 123 - São Paulo, SP" },
 ];
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { selectedTypes, selectedRestrictions, toggleType, toggleRestriction } = useUserPreferences();
   const [notifications, setNotifications] = useState(true);
   const { theme, toggleTheme } = useTheme();
+  const colors = useColors();
+  const styles = makeStyles(colors);
 
   return (
-    <SafeAreaView className="flex-1 bg-secondary dark:bg-gray-900" edges={["top"]}>
-      {/* Sticky Header */}
-      <View className="bg-white dark:bg-gray-900 shadow-sm px-6 py-4 flex-row items-center gap-4">
-        <Pressable
-          onPress={() => router.back()}
-          className="w-10 h-10 rounded-full bg-secondary items-center justify-center"
-        >
+    <SafeAreaView style={styles.container} edges={["top"]}>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <ArrowLeft size={20} color="#ff4757" />
-        </Pressable>
-        <Text className="text-2xl font-semibold text-primary">
-          Perfil e Configurações
-        </Text>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Perfil e Configurações</Text>
       </View>
 
       <ScrollView
-        className="flex-1"
-        contentContainerStyle={{ padding: 24, paddingBottom: 40, gap: 24 }}
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         {/* Profile Info */}
-        <Animated.View
-          entering={FadeInDown.delay(0).duration(400)}
-          className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-6"
-        >
-          <View className="flex-row items-center gap-4 mb-6">
-            <LinearGradient
-              colors={["#ff4757", "#ff5252"]}
-              style={{ width: 80, height: 80, borderRadius: 40, alignItems: "center", justifyContent: "center" }}
-            >
+        <Animated.View entering={FadeInDown.delay(0).duration(400)} style={styles.card}>
+          <View style={styles.profileTop}>
+            <LinearGradient colors={["#ff4757", "#ff5252"]} style={styles.avatarGradient}>
               <User size={40} color="white" />
             </LinearGradient>
             <View>
-              <Text className="text-2xl font-semibold text-foreground dark:text-white mb-1">
-                Roberto
-              </Text>
-              <Text className="text-muted-foreground dark:text-gray-400">
-                Membro desde Mar 2024
-              </Text>
+              <Text style={styles.profileName}>Roberto</Text>
+              <Text style={styles.profileSince}>Membro desde Mar 2024</Text>
             </View>
           </View>
 
-          <View className="gap-3">
-            {[
-              { icon: <Mail size={20} color="#ff4757" />, label: "Email", value: "roberto@email.com" },
-              { icon: <Phone size={20} color="#ff4757" />, label: "Telefone", value: "(11) 98765-4321" },
-              { icon: <MapPin size={20} color="#ff4757" />, label: "Endereço", value: "Rua das Flores, 123 - São Paulo, SP" },
-            ].map((item) => (
-              <View
-                key={item.label}
-                className="flex-row items-center gap-3 p-4 bg-secondary/50 dark:bg-gray-700/50 rounded-xl"
-              >
-                {item.icon}
-                <View className="flex-1">
-                  <Text className="text-sm text-muted-foreground dark:text-gray-400">
-                    {item.label}
-                  </Text>
-                  <Text className="text-foreground dark:text-white">{item.value}</Text>
+          <View style={styles.fieldsGap}>
+            {profileFields.map((field) => (
+              <View key={field.label} style={styles.fieldRow}>
+                {field.icon}
+                <View style={styles.fieldTexts}>
+                  <Text style={styles.fieldLabel}>{field.label}</Text>
+                  <Text style={styles.fieldValue}>{field.value}</Text>
                 </View>
               </View>
             ))}
@@ -109,187 +82,136 @@ export default function ProfileScreen() {
         </Animated.View>
 
         {/* Payment */}
-        <Animated.View
-          entering={FadeInDown.delay(100).duration(400)}
-          className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-6"
-        >
-          <View className="flex-row items-center gap-2 mb-4">
+        <Animated.View entering={FadeInDown.delay(100).duration(400)} style={styles.card}>
+          <View style={styles.cardTitleRow}>
             <CreditCard size={24} color="#ff4757" />
-            <Text className="text-xl font-semibold text-foreground dark:text-white">
-              Informações de Pagamento
-            </Text>
+            <Text style={styles.cardTitle}>Informações de Pagamento</Text>
           </View>
 
-          <LinearGradient
-            colors={["#ff4757", "#ff5252"]}
-            style={{ borderRadius: 12, padding: 16, marginBottom: 12 }}
-          >
-            <Text className="text-white/90 text-sm mb-2">Cartão Principal</Text>
-            <Text className="text-white text-lg tracking-widest mb-3">
-              •••• •••• •••• 4532
-            </Text>
-            <View className="flex-row justify-between">
-              <Text className="text-white text-sm">ROBERTO</Text>
-              <Text className="text-white text-sm">12/26</Text>
+          <LinearGradient colors={["#ff4757", "#ff5252"]} style={styles.creditCard}>
+            <Text style={styles.creditCardLabel}>Cartão Principal</Text>
+            <Text style={styles.creditCardNumber}>•••• •••• •••• 4532</Text>
+            <View style={styles.creditCardFooter}>
+              <Text style={styles.creditCardText}>ROBERTO</Text>
+              <Text style={styles.creditCardText}>12/26</Text>
             </View>
           </LinearGradient>
 
-          <Pressable className="w-full p-4 border-2 border-dashed border-primary/30 rounded-xl flex-row items-center justify-center gap-2">
+          <TouchableOpacity style={styles.addCardBtn}>
             <CreditCard size={20} color="#ff4757" />
-            <Text className="text-primary font-medium">Adicionar Novo Cartão</Text>
-          </Pressable>
+            <Text style={styles.addCardBtnText}>Adicionar Novo Cartão</Text>
+          </TouchableOpacity>
         </Animated.View>
 
-        {/* Cuisine Preferences */}
-        <Animated.View
-          entering={FadeInDown.delay(200).duration(400)}
-          className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-6"
-        >
-          <Text className="text-xl font-semibold text-foreground dark:text-white mb-2">
-            Tipos de Culinária Favoritos
-          </Text>
-          <Text className="text-sm text-muted-foreground dark:text-gray-400 mb-4">
-            Selecione seus tipos de restaurante preferidos
-          </Text>
-          <View className="flex-row flex-wrap gap-2">
-            {restaurantTypes.map((type) => {
-              const active = selectedTypes.includes(type);
-              return (
-                <Pressable
-                  key={type}
-                  onPress={() => toggleType(type)}
-                  className={`flex-row items-center gap-2 px-4 py-2 rounded-full ${
-                    active ? "bg-primary" : "bg-secondary dark:bg-gray-700"
-                  }`}
-                >
-                  {active && <Check size={14} color="white" />}
-                  <Text className={`${active ? "text-white" : "text-foreground dark:text-gray-200"}`}>
-                    {type}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
-        </Animated.View>
-
-        {/* Dietary Restrictions */}
-        <Animated.View
-          entering={FadeInDown.delay(300).duration(400)}
-          className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-6"
-        >
-          <Text className="text-xl font-semibold text-foreground dark:text-white mb-2">
-            Restrições Alimentares
-          </Text>
-          <Text className="text-sm text-muted-foreground dark:text-gray-400 mb-4">
-            Informe suas restrições para filtrar pratos adequados
-          </Text>
-          <View className="flex-row flex-wrap gap-2">
-            {dietaryRestrictions.map((restriction) => {
-              const active = selectedRestrictions.includes(restriction);
-              return (
-                <Pressable
-                  key={restriction}
-                  onPress={() => toggleRestriction(restriction)}
-                  className={`flex-row items-center gap-2 px-4 py-2 rounded-full ${
-                    active ? "bg-primary" : "bg-secondary dark:bg-gray-700"
-                  }`}
-                >
-                  {active && <Check size={14} color="white" />}
-                  <Text className={`${active ? "text-white" : "text-foreground dark:text-gray-200"}`}>
-                    {restriction}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
+        {/* Filters shortcut */}
+        <Animated.View entering={FadeInDown.delay(200).duration(400)} style={styles.card}>
+          <TouchableOpacity style={styles.filterRow} onPress={() => router.back()}>
+            <View style={styles.filterLeft}>
+              <SlidersHorizontal size={20} color="#ff4757" />
+              <View>
+                <Text style={styles.settingLabel}>Preferências e Filtros</Text>
+                <Text style={styles.settingDesc}>Culinárias favoritas e restrições alimentares</Text>
+              </View>
+            </View>
+            <ChevronRight size={20} color={colors.textLight} />
+          </TouchableOpacity>
         </Animated.View>
 
         {/* Settings */}
-        <Animated.View
-          entering={FadeInDown.delay(400).duration(400)}
-          className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-6"
-        >
-          <Text className="text-xl font-semibold text-foreground dark:text-white mb-4">
-            Configurações
-          </Text>
-          <View className="gap-2">
-            {/* Notifications */}
-            <View className="flex-row items-center justify-between p-4 rounded-xl">
-              <View className="flex-row items-center gap-3 flex-1">
-                <Bell size={20} color="#ff4757" />
-                <View>
-                  <Text className="text-foreground dark:text-white">Notificações</Text>
-                  <Text className="text-sm text-muted-foreground dark:text-gray-400">
-                    Receber alertas de novos matches
-                  </Text>
-                </View>
+        <Animated.View entering={FadeInDown.delay(300).duration(400)} style={styles.card}>
+          <Text style={styles.cardTitleStandalone}>Configurações</Text>
+
+          <View style={styles.settingRow}>
+            <View style={styles.settingLeft}>
+              <Bell size={20} color="#ff4757" />
+              <View>
+                <Text style={styles.settingLabel}>Notificações</Text>
+                <Text style={styles.settingDesc}>Receber alertas de novos matches</Text>
               </View>
-              <Switch
-                value={notifications}
-                onValueChange={setNotifications}
-                trackColor={{ false: "#d1d5db", true: "#ff4757" }}
-                thumbColor="white"
-              />
             </View>
-
-            {/* Dark Mode */}
-            <View className="flex-row items-center justify-between p-4 rounded-xl">
-              <View className="flex-row items-center gap-3 flex-1">
-                <Moon size={20} color="#ff4757" />
-                <View>
-                  <Text className="text-foreground dark:text-white">Modo Escuro</Text>
-                  <Text className="text-sm text-muted-foreground dark:text-gray-400">
-                    Tema escuro para economia de bateria
-                  </Text>
-                </View>
-              </View>
-              <Switch
-                value={theme === "dark"}
-                onValueChange={toggleTheme}
-                trackColor={{ false: "#d1d5db", true: "#ff4757" }}
-                thumbColor="white"
-              />
-            </View>
-
-            {/* Language */}
-            <Pressable className="flex-row items-center justify-between p-4 rounded-xl">
-              <View className="flex-row items-center gap-3">
-                <Globe size={20} color="#ff4757" />
-                <View>
-                  <Text className="text-foreground dark:text-white">Idioma</Text>
-                  <Text className="text-sm text-muted-foreground dark:text-gray-400">
-                    Português (Brasil)
-                  </Text>
-                </View>
-              </View>
-              <ChevronRight size={20} color="#9ca3af" />
-            </Pressable>
-
-            {/* Privacy */}
-            <Pressable className="flex-row items-center justify-between p-4 rounded-xl">
-              <View className="flex-row items-center gap-3">
-                <Shield size={20} color="#ff4757" />
-                <View>
-                  <Text className="text-foreground dark:text-white">Privacidade e Segurança</Text>
-                  <Text className="text-sm text-muted-foreground dark:text-gray-400">
-                    Gerencie suas preferências de privacidade
-                  </Text>
-                </View>
-              </View>
-              <ChevronRight size={20} color="#9ca3af" />
-            </Pressable>
+            <Switch value={notifications} onValueChange={setNotifications} trackColor={{ false: "#d1d5db", true: "#ff4757" }} thumbColor="white" />
           </View>
+
+          <View style={styles.settingRow}>
+            <View style={styles.settingLeft}>
+              <Moon size={20} color="#ff4757" />
+              <View>
+                <Text style={styles.settingLabel}>Modo Escuro</Text>
+                <Text style={styles.settingDesc}>Tema escuro para economia de bateria</Text>
+              </View>
+            </View>
+            <Switch value={theme === "dark"} onValueChange={toggleTheme} trackColor={{ false: "#d1d5db", true: "#ff4757" }} thumbColor="white" />
+          </View>
+
+          <TouchableOpacity style={styles.settingRow}>
+            <View style={styles.settingLeft}>
+              <Globe size={20} color="#ff4757" />
+              <View>
+                <Text style={styles.settingLabel}>Idioma</Text>
+                <Text style={styles.settingDesc}>Português (Brasil)</Text>
+              </View>
+            </View>
+            <ChevronRight size={20} color={colors.textLight} />
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.settingRow}>
+            <View style={styles.settingLeft}>
+              <Shield size={20} color="#ff4757" />
+              <View>
+                <Text style={styles.settingLabel}>Privacidade e Segurança</Text>
+                <Text style={styles.settingDesc}>Gerencie suas preferências de privacidade</Text>
+              </View>
+            </View>
+            <ChevronRight size={20} color={colors.textLight} />
+          </TouchableOpacity>
         </Animated.View>
 
         {/* Logout */}
-        <Animated.View entering={FadeInDown.delay(500).duration(400)}>
-          <Pressable className="bg-white dark:bg-gray-800 py-4 rounded-2xl shadow-lg items-center">
-            <Text className="text-destructive font-semibold text-base">
-              Sair da Conta
-            </Text>
-          </Pressable>
+        <Animated.View entering={FadeInDown.delay(400).duration(400)}>
+          <TouchableOpacity style={styles.logoutBtn}>
+            <Text style={styles.logoutText}>Sair da Conta</Text>
+          </TouchableOpacity>
         </Animated.View>
       </ScrollView>
     </SafeAreaView>
   );
+}
+
+function makeStyles(colors: ReturnType<typeof import("@/hooks/useColors").useColors>) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.bgSecondary },
+    header: { backgroundColor: colors.card, paddingHorizontal: 24, paddingVertical: 16, flexDirection: "row", alignItems: "center", gap: 16, elevation: 2 },
+    backBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.bgSecondary, alignItems: "center", justifyContent: "center" },
+    headerTitle: { fontSize: 22, fontWeight: "600", color: "#ff4757" },
+    scroll: { flex: 1 },
+    scrollContent: { padding: 24, paddingBottom: 40, gap: 24 },
+    card: { backgroundColor: colors.card, borderRadius: 24, padding: 24, elevation: 3 },
+    profileTop: { flexDirection: "row", alignItems: "center", gap: 16, marginBottom: 24 },
+    avatarGradient: { width: 80, height: 80, borderRadius: 40, alignItems: "center", justifyContent: "center" },
+    profileName: { fontSize: 22, fontWeight: "600", color: colors.text, marginBottom: 4 },
+    profileSince: { color: colors.textMuted, fontSize: 13 },
+    fieldsGap: { gap: 12 },
+    fieldRow: { flexDirection: "row", alignItems: "center", gap: 12, padding: 16, backgroundColor: colors.surface, borderRadius: 12 },
+    fieldTexts: { flex: 1 },
+    fieldLabel: { fontSize: 12, color: colors.textMuted, marginBottom: 2 },
+    fieldValue: { color: colors.text, fontSize: 14 },
+    cardTitleRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 16 },
+    cardTitle: { fontSize: 18, fontWeight: "600", color: colors.text, marginBottom: 4 },
+    cardTitleStandalone: { fontSize: 18, fontWeight: "600", color: colors.text, marginBottom: 16 },
+    creditCard: { borderRadius: 12, padding: 16, marginBottom: 12 },
+    creditCardLabel: { color: "rgba(255,255,255,0.9)", fontSize: 13, marginBottom: 8 },
+    creditCardNumber: { color: "#ffffff", fontSize: 18, letterSpacing: 4, marginBottom: 12 },
+    creditCardFooter: { flexDirection: "row", justifyContent: "space-between" },
+    creditCardText: { color: "#ffffff", fontSize: 13 },
+    addCardBtn: { width: "100%", padding: 16, borderWidth: 2, borderStyle: "dashed", borderColor: "rgba(255,71,87,0.3)", borderRadius: 12, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 },
+    addCardBtnText: { color: "#ff4757", fontWeight: "500", fontSize: 14 },
+    filterRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+    filterLeft: { flexDirection: "row", alignItems: "center", gap: 12, flex: 1 },
+    settingRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 12, paddingHorizontal: 4 },
+    settingLeft: { flexDirection: "row", alignItems: "center", gap: 12, flex: 1 },
+    settingLabel: { color: colors.text, fontSize: 14, fontWeight: "500" },
+    settingDesc: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
+    logoutBtn: { backgroundColor: colors.card, paddingVertical: 16, borderRadius: 16, elevation: 3, alignItems: "center" },
+    logoutText: { color: "#ef4444", fontWeight: "600", fontSize: 15 },
+  });
 }
