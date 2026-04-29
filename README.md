@@ -159,4 +159,4 @@ Cores personalizadas definidas em [tailwind.config.js](tailwind.config.js):
 
 ## 📄 Licença
 
-Este projeto é privado. Todos os direitos reservados.
+Este projeto é privado. Todos os direitos reservados. (No momento o projeto está publico)
