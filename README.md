@@ -180,7 +180,7 @@ npx prisma migrate dev
 # Popule o banco com dados iniciais
 npm run prisma:seed
 
-# Inicie a API (porta 3000 por padrão)
+# Inicie a API (porta 3001 por padrão)
 npm run dev
 ```
 
@@ -196,7 +196,15 @@ npm install
 npx expo start --clear
 ```
 
-> **Dispositivo físico:** edite `FRONTEND/services/api.ts` e troque `API_URL` pelo IP da sua máquina (ex: `http://192.168.1.x:3000`). O emulador Android já usa `10.0.2.2:3000` automaticamente.
+> **Dispositivo físico:** o app precisa saber o IP da sua máquina na rede local para se comunicar com o backend. Configure-o em `FRONTEND/.env`:
+> ```env
+> EXPO_PUBLIC_API_URL=http://<IP_DA_SUA_MAQUINA>:3001
+> ```
+> Para descobrir seu IP, rode `ipconfig` (Windows) ou `ifconfig` (Mac/Linux) e use o endereço IPv4 da sua interface Wi-Fi.
+>
+> ⚠️ **Toda vez que mudar de rede Wi-Fi, seu IP pode mudar — lembre de atualizar o `FRONTEND/.env` e reiniciar o Expo com `npx expo start --clear`.**
+>
+> O emulador Android não precisa desse ajuste — ele acessa o host via `10.0.2.2` automaticamente.
 
 ### Rodando em cada plataforma
 
@@ -215,7 +223,7 @@ Crie o arquivo `BACKEND/.env` com base em `.env.example`:
 ```env
 DATABASE_URL="mysql://root:suasenha@localhost:3306/foodmatch"
 JWT_SECRET="troque-por-uma-chave-secreta-forte"
-PORT=3000
+PORT=3001
 ```
 
 ---
