@@ -1,46 +1,38 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  Image,
-  StyleSheet,
+  View, Text, FlatList, TouchableOpacity, Image, StyleSheet, ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
-  ArrowLeft,
-  Star,
-  MapPin,
-  Phone,
-  Clock,
-  Heart,
-  ShoppingCart,
-  Plus,
-  Minus,
+  ArrowLeft, Star, MapPin, Phone, Clock, Heart, ShoppingCart, Plus, Minus,
 } from "lucide-react-native";
-import { findRestaurantById, getRestaurantDetail } from "@/data/restaurants";
-import { getMenuByRestaurant, getMenuCategories } from "@/data/menus";
-import { getReviewsByRestaurant } from "@/data/reviews";
+import { apiFetch } from "@/services/api";
+import { useFavorites } from "@/context/FavoritesContext";
 import { useCart } from "@/context/CartContext";
 import { useColors } from "@/hooks/useColors";
-import type { MenuItem, MenuCategory } from "@/types";
+import type { MenuItem, MenuCategory, Restaurant } from "@/types";
+
+interface RestaurantFull extends Restaurant {
+  address?: string;
+  phone?: string;
+  hours?: string;
+  description?: string;
+}
+
+interface Review {
+  id: number;
+  userName: string;
+  rating: number;
+  comment: string;
+  date: string;
+}
 
 function MenuItemCard({
-  item,
-  quantity,
-  onAdd,
-  onRemove,
-}: {
-  item: MenuItem;
-  quantity: number;
-  onAdd: () => void;
-  onRemove: () => void;
-}) {
+  item, quantity, onAdd, onRemove,
+}: { item: MenuItem; quantity: number; onAdd: () => void; onRemove: () => void }) {
   const colors = useColors();
   const styles = makeStyles(colors);
-
   return (
     <View style={styles.menuItem}>
       <Image source={{ uri: item.image }} style={styles.menuItemImage} resizeMode="cover" />
@@ -50,7 +42,7 @@ function MenuItemCard({
           <Text style={styles.menuItemDesc} numberOfLines={2}>{item.description}</Text>
         </View>
         <View style={styles.menuItemBottom}>
-          <Text style={styles.menuItemPrice}>R$ {item.price.toFixed(2).replace(".", ",")}</Text>
+          <Text style={styles.menuItemPrice}>R$ {Number(item.price).toFixed(2).replace(".", ",")}</Text>
           {quantity === 0 ? (
             <TouchableOpacity onPress={onAdd} style={styles.addBtn}>
               <Plus size={18} color="#fff" />
@@ -72,10 +64,9 @@ function MenuItemCard({
   );
 }
 
-function ReviewCard({ review }: { review: any }) {
+function ReviewCard({ review }: { review: Review }) {
   const colors = useColors();
   const styles = makeStyles(colors);
-
   return (
     <View style={styles.reviewCard}>
       <View style={styles.reviewTop}>
@@ -101,21 +92,42 @@ export default function RestaurantDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { items, addItem, removeItem, updateQuantity, itemCount, total } = useCart();
+  const { isFavorite, toggleFavorite } = useFavorites();
   const colors = useColors();
   const styles = makeStyles(colors);
 
   const restaurantId = Number(id);
-  const restaurant = findRestaurantById(restaurantId);
-  const detail = getRestaurantDetail(restaurantId);
-  const menuItems = getMenuByRestaurant(restaurantId);
-  const categories = getMenuCategories(restaurantId);
-  const reviews = getReviewsByRestaurant(restaurantId);
 
-  const [activeCategory, setActiveCategory] = useState<MenuCategory>(
-    categories[0] ?? "Pratos Principais"
-  );
-  const [isFavorite, setIsFavorite] = useState(false);
+  const [restaurant, setRestaurant] = useState<RestaurantFull | null>(null);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeCategory, setActiveCategory] = useState<MenuCategory>("Pratos Principais");
   const [activeTab, setActiveTab] = useState<"menu" | "reviews">("menu");
+
+  useEffect(() => {
+    Promise.all([
+      apiFetch<RestaurantFull>(`/restaurants/${restaurantId}`),
+      apiFetch<MenuItem[]>(`/restaurants/${restaurantId}/menu`),
+      apiFetch<Review[]>(`/restaurants/${restaurantId}/reviews`),
+    ])
+      .then(([r, menu, revs]) => {
+        setRestaurant(r);
+        setMenuItems(menu);
+        setReviews(revs);
+        if (menu.length > 0) setActiveCategory(menu[0].category as MenuCategory);
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [restaurantId]);
+
+  if (loading) {
+    return (
+      <View style={[styles.container, { alignItems: "center", justifyContent: "center" }]}>
+        <ActivityIndicator size="large" color="#ff4757" />
+      </View>
+    );
+  }
 
   if (!restaurant) {
     return (
@@ -128,14 +140,14 @@ export default function RestaurantDetailScreen() {
     );
   }
 
+  const categories = [...new Set(menuItems.map((m) => m.category))] as MenuCategory[];
   const getItemQuantity = (menuItemId: number) =>
     items.find((i) => i.menuItem.id === menuItemId)?.quantity ?? 0;
-
   const filteredItems = menuItems.filter((m) => m.category === activeCategory);
+  const favorited = isFavorite(restaurantId);
 
   const ListHeader = (
     <>
-      {/* Hero */}
       <View style={styles.hero}>
         <Image source={{ uri: restaurant.image }} style={styles.heroImage} resizeMode="cover" />
         <SafeAreaView style={styles.heroOverlay} edges={["top"]}>
@@ -143,14 +155,13 @@ export default function RestaurantDetailScreen() {
             <TouchableOpacity onPress={() => router.back()} style={styles.heroBtn}>
               <ArrowLeft size={20} color={colors.text} />
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => setIsFavorite(!isFavorite)} style={styles.heroBtn}>
-              <Heart size={20} color={isFavorite ? "#ff4747" : "#9ca3af"} fill={isFavorite ? "#ff4747" : "none"} />
+            <TouchableOpacity onPress={() => toggleFavorite(restaurantId)} style={styles.heroBtn}>
+              <Heart size={20} color={favorited ? "#ff4747" : "#9ca3af"} fill={favorited ? "#ff4747" : "none"} />
             </TouchableOpacity>
           </View>
         </SafeAreaView>
       </View>
 
-      {/* Restaurant info */}
       <View style={styles.infoSection}>
         <View style={styles.infoTopRow}>
           <View style={styles.infoTitleBlock}>
@@ -166,31 +177,34 @@ export default function RestaurantDetailScreen() {
           </View>
         </View>
 
-        {detail?.description && (
-          <Text style={styles.description}>{detail.description}</Text>
+        {restaurant.description && (
+          <Text style={styles.description}>{restaurant.description}</Text>
         )}
 
-        {detail && (
-          <View style={styles.detailPills}>
+        <View style={styles.detailPills}>
+          {restaurant.address && (
             <View style={styles.detailRow}>
               <MapPin size={14} color="#ff4747" />
-              <Text style={styles.detailText} numberOfLines={1}>{detail.address}</Text>
+              <Text style={styles.detailText} numberOfLines={1}>{restaurant.address}</Text>
             </View>
+          )}
+          {restaurant.phone && (
             <View style={styles.detailRow}>
               <Phone size={14} color="#ff4747" />
-              <Text style={styles.detailText}>{detail.phone}</Text>
+              <Text style={styles.detailText}>{restaurant.phone}</Text>
             </View>
+          )}
+          {restaurant.hours && (
             <View style={styles.detailRow}>
               <Clock size={14} color="#ff4747" />
-              <Text style={styles.detailText}>{detail.hours}</Text>
+              <Text style={styles.detailText}>{restaurant.hours}</Text>
             </View>
-          </View>
-        )}
+          )}
+        </View>
       </View>
 
       <View style={styles.divider} />
 
-      {/* Tabs */}
       <View style={styles.tabs}>
         <TouchableOpacity
           onPress={() => setActiveTab("menu")}
@@ -208,7 +222,6 @@ export default function RestaurantDetailScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Category pills (menu tab) */}
       {activeTab === "menu" && (
         <FlatList
           horizontal
@@ -219,7 +232,7 @@ export default function RestaurantDetailScreen() {
           contentContainerStyle={styles.catListContent}
           renderItem={({ item: cat }) => (
             <TouchableOpacity
-              onPress={() => setActiveCategory(cat as MenuCategory)}
+              onPress={() => setActiveCategory(cat)}
               style={[styles.catPill, activeCategory === cat && styles.catPillActive]}
             >
               <Text style={[styles.catPillText, activeCategory === cat && styles.catPillTextActive]}>
@@ -246,7 +259,7 @@ export default function RestaurantDetailScreen() {
               <MenuItemCard
                 item={item}
                 quantity={getItemQuantity(item.id)}
-                onAdd={() => addItem(item, restaurant.id, restaurant.name)}
+                onAdd={() => addItem(item, restaurant.id, restaurant.name, restaurant.image)}
                 onRemove={() => {
                   const qty = getItemQuantity(item.id);
                   if (qty <= 1) removeItem(item.id);
@@ -272,7 +285,6 @@ export default function RestaurantDetailScreen() {
         />
       )}
 
-      {/* Floating cart button */}
       {itemCount > 0 && (
         <View style={styles.cartBar}>
           <TouchableOpacity onPress={() => router.push("/cart")} style={styles.cartBtn}>

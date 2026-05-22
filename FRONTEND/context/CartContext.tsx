@@ -5,7 +5,8 @@ interface CartContextType {
   items: CartItem[];
   restaurantId: number | null;
   restaurantName: string;
-  addItem: (item: MenuItem, restaurantId: number, restaurantName: string) => void;
+  restaurantImage: string;
+  addItem: (item: MenuItem, restaurantId: number, restaurantName: string, restaurantImage: string) => void;
   removeItem: (menuItemId: number) => void;
   updateQuantity: (menuItemId: number, quantity: number) => void;
   clearCart: () => void;
@@ -19,17 +20,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [restaurantId, setRestaurantId] = useState<number | null>(null);
   const [restaurantName, setRestaurantName] = useState("");
+  const [restaurantImage, setRestaurantImage] = useState("");
 
-  const addItem = (menuItem: MenuItem, rId: number, rName: string) => {
+  const addItem = (menuItem: MenuItem, rId: number, rName: string, rImage: string) => {
     if (restaurantId !== null && restaurantId !== rId) {
-      // Different restaurant: clear and start fresh
       setItems([{ menuItem, quantity: 1 }]);
       setRestaurantId(rId);
       setRestaurantName(rName);
+      setRestaurantImage(rImage);
       return;
     }
     setRestaurantId(rId);
     setRestaurantName(rName);
+    setRestaurantImage(rImage);
     setItems((prev) => {
       const existing = prev.find((i) => i.menuItem.id === menuItem.id);
       if (existing) {
@@ -47,6 +50,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       if (!next.length) {
         setRestaurantId(null);
         setRestaurantName("");
+        setRestaurantImage("");
       }
       return next;
     });
@@ -66,6 +70,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setItems([]);
     setRestaurantId(null);
     setRestaurantName("");
+    setRestaurantImage("");
   };
 
   const total = items.reduce((sum, i) => sum + i.menuItem.price * i.quantity, 0);
@@ -73,7 +78,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   return (
     <CartContext.Provider
-      value={{ items, restaurantId, restaurantName, addItem, removeItem, updateQuantity, clearCart, total, itemCount }}
+      value={{ items, restaurantId, restaurantName, restaurantImage, addItem, removeItem, updateQuantity, clearCart, total, itemCount }}
     >
       {children}
     </CartContext.Provider>

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { View, Text, TextInput, FlatList, TouchableOpacity, Image, StyleSheet } from "react-native";
+import { useState, useEffect } from "react";
+import { View, Text, TextInput, FlatList, TouchableOpacity, Image, StyleSheet, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { Search, SlidersHorizontal } from "lucide-react-native";
@@ -7,13 +7,27 @@ import { RestaurantCard } from "@/components/RestaurantCard";
 import { CategoryPill } from "@/components/CategoryPill";
 import { FilterModal } from "@/components/FilterModal";
 import { useUserPreferences } from "@/context/UserPreferencesContext";
-import { featuredRestaurant, popularRestaurants, allRestaurants, cuisineIcons } from "@/data/restaurants";
+import { useAuth } from "@/context/AuthContext";
+import { apiFetch } from "@/services/api";
 import type { Restaurant } from "@/types";
 import { useColors } from "@/hooks/useColors";
 
-const allCombined = [...popularRestaurants, ...allRestaurants];
+const cuisineIcons: Record<string, string> = {
+  Italiana: "🇮🇹",
+  Japonesa: "🍣",
+  Mexicana: "🌮",
+  Vegana: "🥗",
+  "Frutos do Mar": "🦐",
+  Árabe: "🥙",
+  "Fast Food": "🍔",
+  Brasileira: "🇧🇷",
+  Chinesa: "🥡",
+  Vegetariana: "🌱",
+  "Café da Manhã": "☕",
+};
 
 export default function HomeScreen() {
+  const { user } = useAuth();
   const { selectedTypes, selectedRestrictions } = useUserPreferences();
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -21,6 +35,22 @@ export default function HomeScreen() {
   const colors = useColors();
   const styles = makeStyles(colors);
   const filterBadge = selectedTypes.length + selectedRestrictions.length;
+
+  const [featured, setFeatured] = useState<Restaurant | null>(null);
+  const [popular, setPopular] = useState<Restaurant[]>([]);
+  const [all, setAll] = useState<Restaurant[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    apiFetch<Restaurant[]>("/restaurants")
+      .then((data) => {
+        setFeatured(data.find((r) => r.featured) ?? data[0] ?? null);
+        setPopular(data.filter((r) => r.popular));
+        setAll(data);
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
 
   const isFiltered = selectedTypes.length > 0 || !!searchQuery.trim() || !!activeCategory;
 
@@ -31,7 +61,9 @@ export default function HomeScreen() {
     }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
-      result = result.filter((r) => r.name.toLowerCase().includes(q) || r.category.toLowerCase().includes(q));
+      result = result.filter(
+        (r) => r.name.toLowerCase().includes(q) || r.category.toLowerCase().includes(q)
+      );
     }
     if (activeCategory) {
       result = result.filter((r) => r.category.toLowerCase() === activeCategory.toLowerCase());
@@ -39,17 +71,22 @@ export default function HomeScreen() {
     return result;
   };
 
-  const filteredGrid = applyFilters(isFiltered ? allCombined : allRestaurants);
+  const filteredGrid = applyFilters(isFiltered ? all : all);
   const noResults = isFiltered && filteredGrid.length === 0;
 
   const ListHeader = (
     <>
-      <LinearGradient colors={["#ff4757", "#ff5252"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.headerGradient}>
+      <LinearGradient
+        colors={["#ff4757", "#ff5252"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={styles.headerGradient}
+      >
         <View style={styles.logoRow}>
           <Image source={require("@/assets/images/icon.png")} style={styles.logoImage} />
           <Text style={styles.logoText}>FoodMatch</Text>
         </View>
-        <Text style={styles.greeting}>Olá, Roberto!</Text>
+        <Text style={styles.greeting}>Olá, {user?.name.split(" ")[0]}!</Text>
         <View style={styles.searchWrapper}>
           <Search size={20} color="#9ca3af" style={styles.searchIconLeft} />
           <TextInput
@@ -89,23 +126,27 @@ export default function HomeScreen() {
           ListEmptyComponent={null}
         />
 
-        {noResults ? (
+        {loading ? (
+          <View style={styles.loadingBox}>
+            <ActivityIndicator size="large" color="#ff4757" />
+          </View>
+        ) : noResults ? (
           <View style={styles.noResults}>
             <Text style={styles.noResultsTitle}>Nenhum restaurante encontrado</Text>
             <Text style={styles.noResultsSub}>Tente buscar por outra categoria ou termo</Text>
           </View>
         ) : null}
 
-        {!isFiltered && (
+        {!loading && !isFiltered && featured && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Recomendado para Você</Text>
             </View>
-            <RestaurantCard restaurant={featuredRestaurant} featured />
+            <RestaurantCard restaurant={featured} featured />
           </View>
         )}
 
-        {!isFiltered && (
+        {!loading && !isFiltered && popular.length > 0 && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Restaurantes Populares</Text>
@@ -113,14 +154,14 @@ export default function HomeScreen() {
             <FlatList
               horizontal
               showsHorizontalScrollIndicator={false}
-              data={popularRestaurants}
+              data={popular}
               keyExtractor={(item) => item.id.toString()}
               renderItem={({ item }) => <RestaurantCard restaurant={item} />}
             />
           </View>
         )}
 
-        {filteredGrid.length > 0 && (
+        {!loading && filteredGrid.length > 0 && (
           <Text style={styles.allTitle}>
             {isFiltered ? "Resultados" : "Todos os Restaurantes"}
           </Text>
@@ -133,14 +174,18 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.container} edges={["top"]}>
       <FilterModal visible={filterVisible} onClose={() => setFilterVisible(false)} />
       <FlatList
-        data={filteredGrid}
+        data={loading ? [] : filteredGrid}
         keyExtractor={(item) => item.id.toString()}
         numColumns={2}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.listContent}
         columnWrapperStyle={filteredGrid.length > 0 ? styles.columnWrapper : undefined}
         ListHeaderComponent={ListHeader}
-        renderItem={({ item }) => <View style={styles.allCardWrapper}><RestaurantCard restaurant={item} featured /></View>}
+        renderItem={({ item }) => (
+          <View style={styles.allCardWrapper}>
+            <RestaurantCard restaurant={item} featured />
+          </View>
+        )}
       />
     </SafeAreaView>
   );
@@ -163,16 +208,13 @@ function makeStyles(colors: ReturnType<typeof import("@/hooks/useColors").useCol
     body: { paddingHorizontal: 24, paddingTop: 16 },
     pillsList: { marginBottom: 24, marginHorizontal: -8 },
     pillsContent: { paddingHorizontal: 8, paddingBottom: 8 },
-    noPrefsBox: { flex: 1, paddingVertical: 16, paddingHorizontal: 16, backgroundColor: colors.surface, borderRadius: 16 },
-    noPrefsText: { fontSize: 13, color: colors.textMuted, textAlign: "center" },
+    loadingBox: { paddingVertical: 48, alignItems: "center" },
     noResults: { alignItems: "center", paddingVertical: 48 },
     noResultsTitle: { fontSize: 17, color: colors.textMuted },
     noResultsSub: { fontSize: 13, color: colors.textLight, marginTop: 8 },
     section: { marginBottom: 32 },
     sectionHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 },
     sectionTitle: { fontSize: 20, fontWeight: "600", color: colors.text },
-    sectionAction: { flexDirection: "row", alignItems: "center", gap: 4 },
-    sectionActionText: { fontSize: 13, color: "#ff4757" },
     allTitle: { fontSize: 20, fontWeight: "600", color: colors.text, marginBottom: 16 },
     listContent: { paddingBottom: 24 },
     columnWrapper: { paddingHorizontal: 24, gap: 16, marginBottom: 16 },

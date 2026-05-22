@@ -6,6 +6,8 @@ export interface Restaurant {
   category: string;
   priceRange: string;
   image: string;
+  featured?: boolean;
+  popular?: boolean;
 }
 
 export interface RestaurantDetail {

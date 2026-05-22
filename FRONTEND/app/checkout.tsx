@@ -5,7 +5,7 @@ import { useRouter } from "expo-router";
 import { ArrowLeft, MapPin, CreditCard, Banknote, Smartphone } from "lucide-react-native";
 import { useCart } from "@/context/CartContext";
 import { useOrders } from "@/context/OrdersContext";
-import { findRestaurantById } from "@/data/restaurants";
+import { useAuth } from "@/context/AuthContext";
 import { useColors } from "@/hooks/useColors";
 
 type PaymentMethod = "card" | "pix" | "cash";
@@ -18,31 +18,41 @@ const PAYMENT_OPTIONS: { key: PaymentMethod; label: string; icon: React.ReactNod
 
 export default function CheckoutScreen() {
   const router = useRouter();
-  const { items, total, restaurantId, restaurantName, clearCart } = useCart();
+  const { items, total, restaurantId, restaurantName, restaurantImage, clearCart } = useCart();
   const { addOrder } = useOrders();
-  const [address, setAddress] = useState("Rua das Flores, 123 – Jardins");
+  const { user } = useAuth();
+  const [address, setAddress] = useState(user?.address ?? "");
   const [payment, setPayment] = useState<PaymentMethod>("card");
   const [loading, setLoading] = useState(false);
   const colors = useColors();
   const styles = makeStyles(colors);
 
-  const restaurant = restaurantId ? findRestaurantById(restaurantId) : null;
   const deliveryFee = 6.99;
   const grandTotal = total + deliveryFee;
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (!address.trim()) {
       Alert.alert("Endereço inválido", "Por favor, informe o endereço de entrega.");
       return;
     }
-    if (!restaurantId || !restaurant) return;
+    if (!restaurantId) return;
     setLoading(true);
-    setTimeout(() => {
-      const order = addOrder({ restaurantId, restaurantName, restaurantImage: restaurant.image, items, total: grandTotal, address });
+    try {
+      const order = await addOrder({
+        restaurantId,
+        restaurantName,
+        restaurantImage,
+        items,
+        total: grandTotal,
+        address,
+      });
       clearCart();
-      setLoading(false);
       router.replace(`/order-confirmation?orderId=${order.id}`);
-    }, 1200);
+    } catch {
+      Alert.alert("Erro", "Não foi possível confirmar o pedido. Tente novamente.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

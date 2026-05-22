@@ -1,4 +1,5 @@
 import { useTheme } from "@/context/ThemeContext";
+import { useAuth } from "@/context/AuthContext";
 import { useColors } from "@/hooks/useColors";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
@@ -28,18 +29,20 @@ import {
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const profileFields = [
-  { icon: <Mail size={20} color="#ff4757" />, label: "Email", value: "roberto@email.com" },
-  { icon: <Phone size={20} color="#ff4757" />, label: "Telefone", value: "(11) 98765-4321" },
-  { icon: <MapPin size={20} color="#ff4757" />, label: "Endereço", value: "Rua das Flores, 123 - São Paulo, SP" },
-];
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const { user, logout } = useAuth();
   const [notifications, setNotifications] = useState(true);
   const { theme, toggleTheme } = useTheme();
   const colors = useColors();
   const styles = makeStyles(colors);
+
+  const profileFields = [
+    { icon: <Mail size={20} color="#ff4757" />, label: "Email", value: user?.email ?? "—" },
+    { icon: <Phone size={20} color="#ff4757" />, label: "Telefone", value: "(11) 98765-4321" },
+    { icon: <MapPin size={20} color="#ff4757" />, label: "Endereço", value: user?.address ?? "Não informado" },
+  ];
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -63,7 +66,7 @@ export default function ProfileScreen() {
               <User size={40} color="white" />
             </LinearGradient>
             <View>
-              <Text style={styles.profileName}>Roberto</Text>
+              <Text style={styles.profileName}>{user?.name ?? "Usuário"}</Text>
               <Text style={styles.profileSince}>Membro desde Mar 2024</Text>
             </View>
           </View>
@@ -168,7 +171,7 @@ export default function ProfileScreen() {
 
         {/* Logout */}
         <Animated.View entering={FadeInDown.delay(400).duration(400)}>
-          <TouchableOpacity style={styles.logoutBtn}>
+          <TouchableOpacity style={styles.logoutBtn} onPress={logout}>
             <Text style={styles.logoutText}>Sair da Conta</Text>
           </TouchableOpacity>
         </Animated.View>
