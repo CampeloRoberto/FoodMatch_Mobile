@@ -74,4 +74,25 @@ router.post("/", async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+// PATCH /orders/:id/status — atualizar status do pedido (parceiro do restaurante)
+router.patch("/:id/status", async (req, res, next) => {
+  try {
+    const { status } = req.body;
+    const validStatuses = ["em andamento", "entregue", "cancelado"];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ error: "Status inválido" });
+    }
+
+    const order = await prisma.order.findUniqueOrThrow({ where: { id: req.params.id } });
+
+    const isPartner = req.user.role === "PARTNER" && req.user.restaurantId === order.restaurantId;
+    if (!isPartner) {
+      return res.status(403).json({ error: "Sem permissão para atualizar este pedido" });
+    }
+
+    await prisma.order.update({ where: { id: req.params.id }, data: { status } });
+    res.json({ ok: true, status });
+  } catch (e) { next(e); }
+});
+
 export default router;

@@ -1,11 +1,14 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { apiFetch, saveToken, removeToken, getToken } from "@/services/api";
+import type { UserRole } from "@/types";
 
 interface User {
   id: string;
   name: string;
   email: string;
   address: string | null;
+  role: UserRole;
+  restaurantId: number | null;
 }
 
 interface AuthContextType {
@@ -13,6 +16,7 @@ interface AuthContextType {
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
+  registerPartner: (name: string, email: string, password: string, restaurantId: number) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -56,13 +60,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(res.user);
   };
 
+  const registerPartner = async (name: string, email: string, password: string, restaurantId: number) => {
+    const res = await apiFetch<{ token: string; user: User }>("/auth/register-partner", {
+      method: "POST",
+      body: JSON.stringify({ name, email, password, restaurantId }),
+    });
+    await saveToken(res.token);
+    setUser(res.user);
+  };
+
   const logout = async () => {
     await removeToken();
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, register, registerPartner, logout }}>
       {children}
     </AuthContext.Provider>
   );

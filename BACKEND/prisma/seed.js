@@ -1,4 +1,5 @@
 import "dotenv/config";
+import bcrypt from "bcryptjs";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
@@ -132,7 +133,25 @@ async function main() {
     await prisma.review.create({ data: rv });
   }
 
+  console.log("Inserindo usuários parceiros...");
+  const partnerPassword = await bcrypt.hash("parceiro123", 10);
+  for (const r of restaurants) {
+    await prisma.user.create({
+      data: {
+        name:         r.name,
+        email:        `restaurante${r.id}@foodmatch.com`,
+        password:     partnerPassword,
+        role:         "PARTNER",
+        restaurantId: r.id,
+      },
+    });
+  }
+
   console.log("Seed concluído!");
+  console.log("\nCredenciais dos parceiros (senha: parceiro123):");
+  for (const r of restaurants) {
+    console.log(`  [${r.name}] restaurante${r.id}@foodmatch.com`);
+  }
 }
 
 main()

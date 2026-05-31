@@ -1,3 +1,5 @@
+export type UserRole = "CUSTOMER" | "PARTNER";
+
 export interface Restaurant {
   id: number;
   name: string;
@@ -51,7 +53,20 @@ export interface OrderItem {
   price: number;
 }
 
+export type MenuCategoryString = string;
+
 export type OrderStatus = "entregue" | "cancelado" | "em andamento";
+
+export interface PartnerOrder {
+  id: string;
+  customerName: string;
+  customerEmail: string;
+  items: OrderItem[];
+  total: number;
+  status: OrderStatus;
+  date: string;
+  address: string;
+}
 
 export interface Order {
   id: string;

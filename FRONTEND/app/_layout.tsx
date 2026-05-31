@@ -17,11 +17,23 @@ function AuthGate({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (loading) return;
-    const isLoginScreen = (segments[0] as string) === "login";
+
+    const isLoginScreen  = (segments[0] as string) === "login";
+    const isPartnerArea  = (segments[0] as string) === "partner";
+
     if (!user && !isLoginScreen) {
       router.replace("/login" as never);
-    } else if (user && isLoginScreen) {
-      router.replace("/");
+      return;
+    }
+
+    if (user) {
+      if (user.role === "PARTNER" && !isPartnerArea && !isLoginScreen) {
+        router.replace("/partner/menu" as never);
+      } else if (user.role === "CUSTOMER" && isPartnerArea) {
+        router.replace("/");
+      } else if (isLoginScreen) {
+        router.replace(user.role === "PARTNER" ? "/partner/menu" as never : "/");
+      }
     }
   }, [user, loading, segments]);
 
