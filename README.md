@@ -34,6 +34,7 @@ Seu app de delivery favorito, feito com React Native + Expo
 - Gerenciamento de cardápio — adicionar, editar e remover pratos com preço e categoria
 - Pedidos recebidos — visualizar pedidos em tempo real e marcar como entregue ou cancelado
 - Edição do restaurante — atualizar descrição, telefone, horários, endereço e foto
+- Balanço geral — receita acumulada, métricas por status e ranking dos pratos mais pedidos
 
 **Geral**
 - Modo escuro / claro — alternável pelo perfil, com suporte automático ao sistema
@@ -64,6 +65,7 @@ Seu app de delivery favorito, feito com React Native + Expo
 | Cardápio | CRUD completo de pratos — adicionar, editar e remover itens do cardápio |
 | Pedidos recebidos | Lista de pedidos do restaurante com ações "Entregue" e "Cancelar" |
 | Meu Restaurante | Edição de dados do restaurante (nome, descrição, telefone, horário, foto) + logout |
+| Balanço Geral | Receita total, contagem de pedidos por status, taxa de entrega e top pratos mais vendidos |
 
 ---
 
@@ -185,6 +187,7 @@ FoodMatch_Mobile/
 | PUT | `/restaurants/:id/menu/:itemId` | ✅ Parceiro | Edita item do cardápio |
 | DELETE | `/restaurants/:id/menu/:itemId` | ✅ Parceiro | Remove item do cardápio |
 | GET | `/restaurants/:id/orders` | ✅ Parceiro | Lista pedidos recebidos pelo restaurante |
+| GET | `/restaurants/:id/stats` | ✅ Parceiro | Balanço financeiro (receita, contagens, top pratos) |
 
 **Pedidos**
 
@@ -296,6 +299,35 @@ Todas usam a mesma senha: **`parceiro123`**
 | Oceano Azul | `restaurante24@foodmatch.com` |
 
 > Para logar como parceiro, selecione **"Sou Restaurante"** na tela de login antes de inserir as credenciais.
+
+---
+
+## 👤 Usuários Teste — Clientes (seed)
+
+Criados automaticamente pelo seed para demonstração, com pedidos pré-prontos nos restaurantes Sabor & Brasa, Bella Pasta e Sushi Yama.
+Todos usam a senha: **`123456`**
+
+| Nome | E-mail | Endereço |
+|------|--------|----------|
+| João Silva | `teste1@gmail.com` | Rua das Flores, 42 – Jardins, SP |
+| Maria Santos | `teste2@gmail.com` | Av. Brigadeiro Faria Lima, 1500 – Itaim Bibi, SP |
+
+**Pedidos inseridos:**
+
+| Usuário | Restaurante | Itens | Total | Status |
+|---------|-------------|-------|-------|--------|
+| João | Sabor & Brasa | Picanha Grelhada + Caipirinha de Limão | R$ 112,80 | Entregue |
+| João | Sabor & Brasa | Pão de Alho x2 + Suco de Maracujá | R$ 52,70 | Entregue |
+| João | Bella Pasta | Tagliatelle al Ragù + Tiramisù | R$ 88,80 | Entregue |
+| João | Bella Pasta | Fettuccine Carbonara + Vinho Tinto | R$ 85,80 | Em andamento |
+| João | Sushi Yama | Combo Sushi 16 peças + Sake Quente | R$ 108,80 | Entregue |
+| Maria | Sabor & Brasa | Costela no Bafo + Linguiça Artesanal | R$ 114,80 | Entregue |
+| Maria | Bella Pasta | Risotto ai Funghi + Vinho Tinto | R$ 101,80 | Entregue |
+| Maria | Bella Pasta | Bruschetta x2 + Panna Cotta | R$ 82,70 | Em andamento |
+| Maria | Sushi Yama | Temaki Salmão x2 + Chá Verde x2 | R$ 91,60 | Entregue |
+| Maria | Sushi Yama | Gyoza + Mochi de Matcha | R$ 57,80 | Cancelado |
+
+> Para logar como cliente, selecione **"Sou Cliente"** na tela de login.
 
 ---
 

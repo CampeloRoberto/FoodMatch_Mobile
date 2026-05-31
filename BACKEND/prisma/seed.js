@@ -147,11 +147,201 @@ async function main() {
     });
   }
 
+  console.log("Inserindo usuários teste e pedidos...");
+  const customerPassword = await bcrypt.hash("123456", 10);
+
+  const teste1 = await prisma.user.create({
+    data: {
+      name:     "João Silva",
+      email:    "teste1@gmail.com",
+      password: customerPassword,
+      address:  "Rua das Flores, 42 – Jardins, SP",
+      role:     "CUSTOMER",
+    },
+  });
+
+  const teste2 = await prisma.user.create({
+    data: {
+      name:     "Maria Santos",
+      email:    "teste2@gmail.com",
+      password: customerPassword,
+      address:  "Av. Brigadeiro Faria Lima, 1500 – Itaim Bibi, SP",
+      role:     "CUSTOMER",
+    },
+  });
+
+  // --- Pedidos de teste1 ---
+
+  // Sabor & Brasa — entregue
+  await prisma.order.create({
+    data: {
+      userId:       teste1.id,
+      restaurantId: 1,
+      total:        112.80,
+      status:       "entregue",
+      address:      "Rua das Flores, 42 – Jardins, SP",
+      createdAt:    new Date("2026-05-20T19:30:00Z"),
+      items: { create: [
+        { menuItemId: 103, name: "Picanha Grelhada",    quantity: 1, price: 89.90 },
+        { menuItemId: 106, name: "Caipirinha de Limão", quantity: 1, price: 22.90 },
+      ]},
+    },
+  });
+
+  // Sabor & Brasa — entregue
+  await prisma.order.create({
+    data: {
+      userId:       teste1.id,
+      restaurantId: 1,
+      total:        52.70,
+      status:       "entregue",
+      address:      "Rua das Flores, 42 – Jardins, SP",
+      createdAt:    new Date("2026-05-24T12:15:00Z"),
+      items: { create: [
+        { menuItemId: 101, name: "Pão de Alho",      quantity: 2, price: 18.90 },
+        { menuItemId: 107, name: "Suco de Maracujá", quantity: 1, price: 14.90 },
+      ]},
+    },
+  });
+
+  // Bella Pasta — entregue
+  await prisma.order.create({
+    data: {
+      userId:       teste1.id,
+      restaurantId: 2,
+      total:        88.80,
+      status:       "entregue",
+      address:      "Rua das Flores, 42 – Jardins, SP",
+      createdAt:    new Date("2026-05-22T20:00:00Z"),
+      items: { create: [
+        { menuItemId: 203, name: "Tagliatelle al Ragù", quantity: 1, price: 58.90 },
+        { menuItemId: 207, name: "Tiramisù",             quantity: 1, price: 29.90 },
+      ]},
+    },
+  });
+
+  // Bella Pasta — em andamento
+  await prisma.order.create({
+    data: {
+      userId:       teste1.id,
+      restaurantId: 2,
+      total:        85.80,
+      status:       "em andamento",
+      address:      "Rua das Flores, 42 – Jardins, SP",
+      createdAt:    new Date("2026-05-31T18:45:00Z"),
+      items: { create: [
+        { menuItemId: 204, name: "Fettuccine Carbonara",  quantity: 1, price: 52.90 },
+        { menuItemId: 206, name: "Vinho Tinto da Casa",   quantity: 1, price: 32.90 },
+      ]},
+    },
+  });
+
+  // Sushi Yama — entregue
+  await prisma.order.create({
+    data: {
+      userId:       teste1.id,
+      restaurantId: 3,
+      total:        108.80,
+      status:       "entregue",
+      address:      "Rua das Flores, 42 – Jardins, SP",
+      createdAt:    new Date("2026-05-26T21:00:00Z"),
+      items: { create: [
+        { menuItemId: 303, name: "Combo Sushi 16 peças", quantity: 1, price: 79.90 },
+        { menuItemId: 306, name: "Sake Quente",           quantity: 1, price: 28.90 },
+      ]},
+    },
+  });
+
+  // --- Pedidos de teste2 ---
+
+  // Sabor & Brasa — entregue
+  await prisma.order.create({
+    data: {
+      userId:       teste2.id,
+      restaurantId: 1,
+      total:        114.80,
+      status:       "entregue",
+      address:      "Av. Brigadeiro Faria Lima, 1500 – Itaim Bibi, SP",
+      createdAt:    new Date("2026-05-18T20:00:00Z"),
+      items: { create: [
+        { menuItemId: 104, name: "Costela no Bafo",      quantity: 1, price: 79.90 },
+        { menuItemId: 102, name: "Linguiça Artesanal",   quantity: 1, price: 34.90 },
+      ]},
+    },
+  });
+
+  // Bella Pasta — entregue
+  await prisma.order.create({
+    data: {
+      userId:       teste2.id,
+      restaurantId: 2,
+      total:        101.80,
+      status:       "entregue",
+      address:      "Av. Brigadeiro Faria Lima, 1500 – Itaim Bibi, SP",
+      createdAt:    new Date("2026-05-21T19:30:00Z"),
+      items: { create: [
+        { menuItemId: 205, name: "Risotto ai Funghi",    quantity: 1, price: 68.90 },
+        { menuItemId: 206, name: "Vinho Tinto da Casa",  quantity: 1, price: 32.90 },
+      ]},
+    },
+  });
+
+  // Bella Pasta — em andamento
+  await prisma.order.create({
+    data: {
+      userId:       teste2.id,
+      restaurantId: 2,
+      total:        82.70,
+      status:       "em andamento",
+      address:      "Av. Brigadeiro Faria Lima, 1500 – Itaim Bibi, SP",
+      createdAt:    new Date("2026-05-31T20:10:00Z"),
+      items: { create: [
+        { menuItemId: 201, name: "Bruschetta Clássica", quantity: 2, price: 28.90 },
+        { menuItemId: 208, name: "Panna Cotta",          quantity: 1, price: 24.90 },
+      ]},
+    },
+  });
+
+  // Sushi Yama — entregue
+  await prisma.order.create({
+    data: {
+      userId:       teste2.id,
+      restaurantId: 3,
+      total:        91.60,
+      status:       "entregue",
+      address:      "Av. Brigadeiro Faria Lima, 1500 – Itaim Bibi, SP",
+      createdAt:    new Date("2026-05-25T20:30:00Z"),
+      items: { create: [
+        { menuItemId: 304, name: "Temaki Salmão",       quantity: 2, price: 32.90 },
+        { menuItemId: 307, name: "Chá Verde Gelado",    quantity: 2, price: 12.90 },
+      ]},
+    },
+  });
+
+  // Sushi Yama — cancelado
+  await prisma.order.create({
+    data: {
+      userId:       teste2.id,
+      restaurantId: 3,
+      total:        57.80,
+      status:       "cancelado",
+      address:      "Av. Brigadeiro Faria Lima, 1500 – Itaim Bibi, SP",
+      createdAt:    new Date("2026-05-28T13:00:00Z"),
+      items: { create: [
+        { menuItemId: 301, name: "Gyoza (8 un)",       quantity: 1, price: 34.90 },
+        { menuItemId: 308, name: "Mochi de Matcha",    quantity: 1, price: 22.90 },
+      ]},
+    },
+  });
+
   console.log("Seed concluído!");
   console.log("\nCredenciais dos parceiros (senha: parceiro123):");
   for (const r of restaurants) {
     console.log(`  [${r.name}] restaurante${r.id}@foodmatch.com`);
   }
+  console.log("\nCredenciais dos clientes teste (senha: 123456):");
+  console.log("  [João Silva]  teste1@gmail.com");
+  console.log("  [Maria Santos] teste2@gmail.com");
 }
 
 main()
