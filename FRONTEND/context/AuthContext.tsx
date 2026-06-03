@@ -17,6 +17,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
   registerPartner: (name: string, email: string, password: string, restaurantId: number) => Promise<void>;
+  createRestaurantPartner: (name: string, email: string, password: string, restaurantName: string, category: string, priceRange: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -69,13 +70,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(res.user);
   };
 
+  const createRestaurantPartner = async (name: string, email: string, password: string, restaurantName: string, category: string, priceRange: string) => {
+    const res = await apiFetch<{ token: string; user: User }>("/auth/create-partner", {
+      method: "POST",
+      body: JSON.stringify({ name, email, password, restaurantName, category, priceRange }),
+    });
+    await saveToken(res.token);
+    setUser(res.user);
+  };
+
   const logout = async () => {
     await removeToken();
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, registerPartner, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, register, registerPartner, createRestaurantPartner, logout }}>
       {children}
     </AuthContext.Provider>
   );

@@ -12,11 +12,15 @@ import { apiFetch } from "@/services/api";
 import { useColors } from "@/hooks/useColors";
 import type { Restaurant } from "@/types";
 
-type UserType = "cliente" | "parceiro";
-type Mode     = "login" | "register";
+type UserType      = "cliente" | "parceiro";
+type Mode          = "login" | "register";
+type PartnerMode   = "existing" | "new";
+
+const CATEGORIES = ["Brasileira", "Italiana", "Japonesa", "Americana", "Mexicana", "Árabe", "Chinesa", "Portuguesa", "Vegetariana", "Frutos do Mar"];
+const PRICE_RANGES = ["$", "$$", "$$$"];
 
 export default function LoginScreen() {
-  const { login, register, registerPartner } = useAuth();
+  const { login, register, registerPartner, createRestaurantPartner } = useAuth();
   const colors = useColors();
   const styles = makeStyles(colors);
 
@@ -28,10 +32,16 @@ export default function LoginScreen() {
   const [loading, setLoading]             = useState(false);
   const [error, setError]                 = useState("");
 
-  const [restaurants, setRestaurants]           = useState<Restaurant[]>([]);
+  const [restaurants, setRestaurants]               = useState<Restaurant[]>([]);
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
-  const [pickerVisible, setPickerVisible]       = useState(false);
-  const [pickerSearch, setPickerSearch]         = useState("");
+  const [pickerVisible, setPickerVisible]           = useState(false);
+  const [pickerSearch, setPickerSearch]             = useState("");
+
+  const [partnerMode, setPartnerMode]               = useState<PartnerMode>("existing");
+  const [newRestaurantName, setNewRestaurantName]   = useState("");
+  const [newCategory, setNewCategory]               = useState("");
+  const [newPriceRange, setNewPriceRange]           = useState("");
+  const [categoryPickerVisible, setCategoryPickerVisible] = useState(false);
 
   useEffect(() => {
     apiFetch<Restaurant[]>("/restaurants").then(setRestaurants).catch(() => {});
@@ -41,8 +51,13 @@ export default function LoginScreen() {
     setError("");
     if (mode === "register" && !name.trim()) { setError("Informe seu nome"); return; }
     if (!email.trim() || !password.trim())   { setError("Preencha todos os campos"); return; }
-    if (userType === "parceiro" && mode === "register" && !selectedRestaurant) {
-      setError("Selecione seu restaurante"); return;
+    if (userType === "parceiro" && mode === "register") {
+      if (partnerMode === "existing" && !selectedRestaurant) { setError("Selecione seu restaurante"); return; }
+      if (partnerMode === "new") {
+        if (!newRestaurantName.trim()) { setError("Informe o nome do restaurante"); return; }
+        if (!newCategory)              { setError("Selecione a categoria"); return; }
+        if (!newPriceRange)            { setError("Selecione a faixa de preço"); return; }
+      }
     }
     setLoading(true);
     try {
@@ -50,8 +65,10 @@ export default function LoginScreen() {
         await login(email.trim(), password);
       } else if (userType === "cliente") {
         await register(name.trim(), email.trim(), password);
-      } else {
+      } else if (partnerMode === "existing") {
         await registerPartner(name.trim(), email.trim(), password, selectedRestaurant!.id);
+      } else {
+        await createRestaurantPartner(name.trim(), email.trim(), password, newRestaurantName.trim(), newCategory, newPriceRange);
       }
     } catch (e: any) {
       setError(e.message ?? "Erro ao entrar. Verifique os dados.");
@@ -60,7 +77,7 @@ export default function LoginScreen() {
     }
   };
 
-  const switchType = (t: UserType) => { setUserType(t); setError(""); setSelectedRestaurant(null); };
+  const switchType = (t: UserType) => { setUserType(t); setError(""); setSelectedRestaurant(null); setPartnerMode("existing"); };
   const switchMode = (m: Mode)     => { setMode(m); setError(""); };
 
   const filteredRestaurants = restaurants.filter((r) =>
@@ -147,18 +164,68 @@ export default function LoginScreen() {
               onSubmitEditing={handleSubmit}
             />
 
-            {/* Seletor de restaurante (só para parceiro em modo registro) */}
+            {/* Parceiro em modo registro */}
             {userType === "parceiro" && mode === "register" && (
-              <TouchableOpacity
-                style={[styles.restaurantPicker, { backgroundColor: colors.inputBg, borderColor: colors.border }]}
-                onPress={() => setPickerVisible(true)}
-              >
-                <Store size={18} color={selectedRestaurant ? "#ff4757" : colors.textLight} />
-                <Text style={[styles.restaurantPickerText, { color: selectedRestaurant ? colors.text : colors.textLight }]} numberOfLines={1}>
-                  {selectedRestaurant ? selectedRestaurant.name : "Selecione seu restaurante"}
-                </Text>
-                <ChevronDown size={18} color={colors.textLight} />
-              </TouchableOpacity>
+              <>
+                <View style={styles.partnerModeRow}>
+                  <TouchableOpacity
+                    onPress={() => setPartnerMode("existing")}
+                    style={[styles.partnerModeBtn, { borderColor: partnerMode === "existing" ? "#ff4757" : colors.border, backgroundColor: partnerMode === "existing" ? "rgba(255,71,87,0.07)" : colors.inputBg }]}
+                  >
+                    <Text style={[styles.partnerModeText, { color: partnerMode === "existing" ? "#ff4757" : colors.textMuted }]}>Restaurante existente</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => setPartnerMode("new")}
+                    style={[styles.partnerModeBtn, { borderColor: partnerMode === "new" ? "#ff4757" : colors.border, backgroundColor: partnerMode === "new" ? "rgba(255,71,87,0.07)" : colors.inputBg }]}
+                  >
+                    <Text style={[styles.partnerModeText, { color: partnerMode === "new" ? "#ff4757" : colors.textMuted }]}>Novo restaurante</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {partnerMode === "existing" ? (
+                  <TouchableOpacity
+                    style={[styles.restaurantPicker, { backgroundColor: colors.inputBg, borderColor: colors.border }]}
+                    onPress={() => setPickerVisible(true)}
+                  >
+                    <Store size={18} color={selectedRestaurant ? "#ff4757" : colors.textLight} />
+                    <Text style={[styles.restaurantPickerText, { color: selectedRestaurant ? colors.text : colors.textLight }]} numberOfLines={1}>
+                      {selectedRestaurant ? selectedRestaurant.name : "Selecione seu restaurante"}
+                    </Text>
+                    <ChevronDown size={18} color={colors.textLight} />
+                  </TouchableOpacity>
+                ) : (
+                  <>
+                    <TextInput
+                      placeholder="Nome do restaurante"
+                      value={newRestaurantName}
+                      onChangeText={setNewRestaurantName}
+                      style={[styles.input, { color: colors.text, backgroundColor: colors.inputBg, borderColor: colors.border }]}
+                      placeholderTextColor={colors.textLight}
+                      autoCapitalize="words"
+                    />
+                    <TouchableOpacity
+                      style={[styles.restaurantPicker, { backgroundColor: colors.inputBg, borderColor: colors.border }]}
+                      onPress={() => setCategoryPickerVisible(true)}
+                    >
+                      <Text style={[styles.restaurantPickerText, { color: newCategory ? colors.text : colors.textLight }]}>
+                        {newCategory || "Selecione a categoria"}
+                      </Text>
+                      <ChevronDown size={18} color={colors.textLight} />
+                    </TouchableOpacity>
+                    <View style={styles.priceRangeRow}>
+                      {PRICE_RANGES.map((p) => (
+                        <TouchableOpacity
+                          key={p}
+                          onPress={() => setNewPriceRange(p)}
+                          style={[styles.priceBtn, { borderColor: newPriceRange === p ? "#ff4757" : colors.border, backgroundColor: newPriceRange === p ? "#ff4757" : colors.inputBg }]}
+                        >
+                          <Text style={[styles.priceBtnText, { color: newPriceRange === p ? "#fff" : colors.textMuted }]}>{p}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  </>
+                )}
+              </>
             )}
 
             {userType === "parceiro" && mode === "login" && (
@@ -183,6 +250,32 @@ export default function LoginScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Modal seletor de categoria */}
+      <Modal visible={categoryPickerVisible} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setCategoryPickerVisible(false)}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }} edges={["top"]}>
+          <View style={[styles.pickerHeader, { borderBottomColor: colors.border }]}>
+            <Text style={[styles.pickerTitle, { color: colors.text }]}>Selecione a categoria</Text>
+            <TouchableOpacity onPress={() => setCategoryPickerVisible(false)}>
+              <X size={24} color={colors.textMuted} />
+            </TouchableOpacity>
+          </View>
+          {CATEGORIES.map((cat) => (
+            <TouchableOpacity
+              key={cat}
+              style={[styles.pickerItem, newCategory === cat && styles.pickerItemActive, { borderBottomColor: colors.border }]}
+              onPress={() => { setNewCategory(cat); setCategoryPickerVisible(false); }}
+            >
+              <Text style={[styles.pickerItemName, { color: colors.text }]}>{cat}</Text>
+              {newCategory === cat && (
+                <View style={styles.pickerCheckMark}>
+                  <Text style={styles.pickerCheckMarkText}>✓</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          ))}
+        </SafeAreaView>
+      </Modal>
 
       {/* Modal seletor de restaurante */}
       <Modal visible={pickerVisible} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setPickerVisible(false)}>
@@ -271,5 +364,11 @@ function makeStyles(colors: ReturnType<typeof import("@/hooks/useColors").useCol
     pickerItemCategory: { fontSize: 12, marginTop: 2 },
     pickerCheckMark: { width: 24, height: 24, backgroundColor: "#ff4757", borderRadius: 12, alignItems: "center", justifyContent: "center" },
     pickerCheckMarkText: { color: "#fff", fontSize: 13, fontWeight: "700" },
+    partnerModeRow: { flexDirection: "row", gap: 8 },
+    partnerModeBtn: { flex: 1, paddingVertical: 10, alignItems: "center", borderRadius: 12, borderWidth: 1.5 },
+    partnerModeText: { fontWeight: "600", fontSize: 13 },
+    priceRangeRow: { flexDirection: "row", gap: 8 },
+    priceBtn: { flex: 1, paddingVertical: 12, alignItems: "center", borderRadius: 12, borderWidth: 1.5 },
+    priceBtnText: { fontWeight: "700", fontSize: 15 },
   });
 }

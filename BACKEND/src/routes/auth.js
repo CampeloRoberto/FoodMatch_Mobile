@@ -2,7 +2,7 @@ import { Router } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { prisma } from "../lib/prisma.js";
-import { registerSchema, registerPartnerSchema, loginSchema } from "../schemas/authSchema.js";
+import { registerSchema, registerPartnerSchema, createRestaurantPartnerSchema, loginSchema } from "../schemas/authSchema.js";
 import { authenticate } from "../middlewares/authenticate.js";
 
 const router = Router();
@@ -75,6 +75,35 @@ router.post("/register-partner", async (req, res, next) => {
     const hashed = await bcrypt.hash(data.password, 10);
     const user = await prisma.user.create({
       data: { name: data.name, email: data.email, password: hashed, role: "PARTNER", restaurantId: data.restaurantId },
+    });
+
+    res.status(201).json({ token: signToken(user), user: userPayload(user) });
+  } catch (e) { next(e); }
+});
+
+router.post("/create-partner", async (req, res, next) => {
+  try {
+    const data = createRestaurantPartnerSchema.parse(req.body);
+
+    const existing = await prisma.user.findUnique({ where: { email: data.email } });
+    if (existing) return res.status(409).json({ error: "E-mail já cadastrado" });
+
+    const DEFAULT_IMAGE = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&q=80";
+
+    const user = await prisma.$transaction(async (tx) => {
+      const restaurant = await tx.restaurant.create({
+        data: {
+          name:       data.restaurantName,
+          category:   data.category,
+          priceRange: data.priceRange,
+          distance:   "0,0 km",
+          image:      DEFAULT_IMAGE,
+        },
+      });
+      const hashed = await bcrypt.hash(data.password, 10);
+      return tx.user.create({
+        data: { name: data.name, email: data.email, password: hashed, role: "PARTNER", restaurantId: restaurant.id },
+      });
     });
 
     res.status(201).json({ token: signToken(user), user: userPayload(user) });
