@@ -27,12 +27,10 @@ export default function CheckoutScreen() {
   const colors = useColors();
   const styles = makeStyles(colors);
 
-  const deliveryFee = 6.99;
-  const grandTotal = total + deliveryFee;
 
   const handleConfirm = async () => {
     if (!address.trim()) {
-      Alert.alert("Endereço inválido", "Por favor, informe o endereço de entrega.");
+      Alert.alert("Local inválido", "Por favor, informe o local de retirada.");
       return;
     }
     if (!restaurantId) return;
@@ -43,7 +41,7 @@ export default function CheckoutScreen() {
         restaurantName,
         restaurantImage,
         items,
-        total: grandTotal,
+        total,
         address,
       });
       clearCart();
@@ -74,7 +72,7 @@ export default function CheckoutScreen() {
         <View style={styles.card}>
           <View style={styles.cardHeaderRow}>
             <MapPin size={18} color="#ff4747" />
-            <Text style={styles.cardSectionTitle}>Endereço de entrega</Text>
+            <Text style={styles.cardSectionTitle}>Local de retirada</Text>
           </View>
           <TextInput
             value={address}
@@ -120,12 +118,8 @@ export default function CheckoutScreen() {
           </View>
           <View style={styles.summaryDivider} />
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Taxa de entrega</Text>
-            <Text style={styles.summaryValue}>R$ {deliveryFee.toFixed(2).replace(".", ",")}</Text>
-          </View>
-          <View style={styles.summaryRow}>
             <Text style={styles.summaryTotal}>Total</Text>
-            <Text style={styles.summaryTotalValue}>R$ {grandTotal.toFixed(2).replace(".", ",")}</Text>
+            <Text style={styles.summaryTotalValue}>R$ {total.toFixed(2).replace(".", ",")}</Text>
           </View>
         </View>
       </ScrollView>
@@ -133,7 +127,7 @@ export default function CheckoutScreen() {
       <View style={styles.footer}>
         <TouchableOpacity onPress={handleConfirm} disabled={loading} style={[styles.confirmBtn, { opacity: loading ? 0.7 : 1 }]}>
           <Text style={styles.confirmBtnText}>
-            {loading ? "Confirmando pedido..." : `Confirmar • R$ ${grandTotal.toFixed(2).replace(".", ",")}`}
+            {loading ? "Confirmando pedido..." : `Confirmar • R$ ${total.toFixed(2).replace(".", ",")}`}
           </Text>
         </TouchableOpacity>
       </View>

@@ -12,8 +12,6 @@ export default function CartScreen() {
   const colors = useColors();
   const styles = makeStyles(colors);
 
-  const deliveryFee = 6.99;
-  const grandTotal = total + deliveryFee;
 
   if (items.length === 0) {
     return (
@@ -91,14 +89,10 @@ export default function CartScreen() {
           <Text style={styles.summaryLabel}>Subtotal ({itemCount} {itemCount === 1 ? "item" : "itens"})</Text>
           <Text style={styles.summaryValue}>R$ {total.toFixed(2).replace(".", ",")}</Text>
         </View>
-        <View style={styles.summaryRow}>
-          <Text style={styles.summaryLabel}>Taxa de entrega</Text>
-          <Text style={styles.summaryValue}>R$ {deliveryFee.toFixed(2).replace(".", ",")}</Text>
-        </View>
         <View style={styles.summaryDivider} />
         <View style={styles.summaryRow}>
           <Text style={styles.summaryTotal}>Total</Text>
-          <Text style={styles.summaryTotalValue}>R$ {grandTotal.toFixed(2).replace(".", ",")}</Text>
+          <Text style={styles.summaryTotalValue}>R$ {total.toFixed(2).replace(".", ",")}</Text>
         </View>
         <TouchableOpacity onPress={() => router.push("/checkout")} style={styles.checkoutBtn}>
           <Text style={styles.checkoutBtnText}>Finalizar pedido</Text>
