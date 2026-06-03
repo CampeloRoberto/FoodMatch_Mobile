@@ -51,16 +51,16 @@ export default function OrderConfirmationScreen() {
               <Text style={[styles.orderValue, styles.orderValuePrimary]}>R$ {order.total.toFixed(2).replace(".", ",")}</Text>
             </View>
             <View style={styles.orderRow}>
-              <Text style={styles.orderLabel}>Entrega em</Text>
+              <Text style={styles.orderLabel}>Retirada em</Text>
               <Text style={styles.orderValue} numberOfLines={1}>{order.address.split("–")[0].trim()}</Text>
             </View>
           </View>
         )}
 
         <View style={styles.etaBanner}>
-          <Text style={styles.etaEmoji}>🛵</Text>
+          <Text style={styles.etaEmoji}>👨‍🍳</Text>
           <View>
-            <Text style={styles.etaLabel}>Tempo estimado de entrega</Text>
+            <Text style={styles.etaLabel}>Tempo estimado de preparo</Text>
             <Text style={styles.etaTime}>30–45 min</Text>
           </View>
         </View>

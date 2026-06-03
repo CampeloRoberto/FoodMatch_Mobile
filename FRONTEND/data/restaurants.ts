@@ -211,12 +211,14 @@ export const favoriteRestaurants: Restaurant[] = [
 ];
 
 export const nearbyRestaurants = [
-  { id: 1, name: "Sabor & Brasa", distance: "500m" },
-  { id: 2, name: "Bella Pasta", distance: "1.2km" },
-  { id: 3, name: "Sushi Yama", distance: "2.0km" },
-  { id: 4, name: "Burger Point", distance: "800m" },
-  { id: 5, name: "Green Bowl", distance: "1.5km" },
+  { id: 1, name: "Sabor & Brasa", distance: "500m",  mapX: 320, mapY: 295 },
+  { id: 2, name: "Bella Pasta",   distance: "1.2km", mapX: 430, mapY: 130 },
+  { id: 3, name: "Sushi Yama",    distance: "2.0km", mapX: 510, mapY: 430 },
+  { id: 4, name: "Burger Point",  distance: "800m",  mapX: 120, mapY: 375 },
+  { id: 5, name: "Green Bowl",    distance: "1.5km", mapX: 305, mapY: 465 },
 ];
+
+export const USER_MAP_POSITION = { x: 280, y: 310 };
 
 export const allRestaurantsById: Record<number, Restaurant> = [
   featuredRestaurant,
