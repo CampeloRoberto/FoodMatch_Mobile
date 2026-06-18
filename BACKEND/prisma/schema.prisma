@@ -1,0 +1,105 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String      @id @default(cuid())
+  name         String
+  email        String      @unique
+  password     String
+  address      String?
+  role         String      @default("CUSTOMER")
+  restaurantId Int?
+  restaurant   Restaurant? @relation("RestaurantOwner", fields: [restaurantId], references: [id])
+  createdAt    DateTime    @default(now())
+  orders       Order[]
+  favorites    Favorite[]
+  reviews      Review[]
+}
+
+model Restaurant {
+  id          Int        @id @default(autoincrement())
+  name        String
+  rating      Float      @default(0)
+  distance    String
+  category    String
+  priceRange  String
+  image       String
+  address     String?
+  phone       String?
+  hours       String?
+  description String?    @db.Text
+  featured    Boolean    @default(false)
+  popular     Boolean    @default(false)
+  createdAt   DateTime   @default(now())
+  menuItems   MenuItem[]
+  orders      Order[]
+  favorites   Favorite[]
+  reviews     Review[]
+  owners      User[]     @relation("RestaurantOwner")
+}
+
+model MenuItem {
+  id           Int        @id @default(autoincrement())
+  restaurantId Int
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  category     String
+  name         String
+  description  String     @db.Text
+  price        Decimal    @db.Decimal(10, 2)
+  image        String
+  createdAt    DateTime   @default(now())
+  orderItems   OrderItem[]
+}
+
+model Review {
+  id           Int        @id @default(autoincrement())
+  restaurantId Int
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  userId       String?
+  user         User?      @relation(fields: [userId], references: [id])
+  userName     String
+  rating       Int
+  comment      String     @db.Text
+  date         DateTime   @default(now())
+}
+
+model Order {
+  id           String      @id @default(cuid())
+  userId       String
+  user         User        @relation(fields: [userId], references: [id])
+  restaurantId Int
+  restaurant   Restaurant  @relation(fields: [restaurantId], references: [id])
+  total        Decimal     @db.Decimal(10, 2)
+  status       String      @default("em andamento")
+  address      String
+  createdAt    DateTime    @default(now())
+  items        OrderItem[]
+}
+
+model OrderItem {
+  id         Int      @id @default(autoincrement())
+  orderId    String
+  order      Order    @relation(fields: [orderId], references: [id])
+  menuItemId Int
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
+  name       String
+  quantity   Int
+  price      Decimal  @db.Decimal(10, 2)
+}
+
+model Favorite {
+  id           Int        @id @default(autoincrement())
+  userId       String
+  user         User       @relation(fields: [userId], references: [id])
+  restaurantId Int
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  createdAt    DateTime   @default(now())
+
+  @@unique([userId, restaurantId])
+}
